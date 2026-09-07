@@ -1,0 +1,19 @@
+{
+  "planner_reviewer": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high"
+  },
+  "implementer": {
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "high",
+    "max_review_rounds": 3
+  },
+  "feishu": {
+    "space_id": "7681491291934330130",
+    "space_name": "AI 开发笔记",
+    "journal_title": "project_resume｜开发日记",
+    "wiki_node_token": "Xad9wSs6kiHoljkBPbqcKZtNnfe",
+    "doc_id": "WI0Ldug6coQbhfxZSd9cxb1VnMe",
+    "doc_url": "https://www.feishu.cn/wiki/Xad9wSs6kiHoljkBPbqcKZtNnfe"
+  }
+}
