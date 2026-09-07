@@ -16,5 +16,5 @@
 
 - 后端：Maven 3.9.11 / Java 21.0.11，`mvn -f job-portal-backend/pom.xml test` 通过（94 项测试）。
 - 前端：Node.js 24.17.0 / npm 11.13.0，`npm test` 通过（13 个测试文件、75 项测试），`npm run build` 通过。
-- 依赖安装：`npm ci` 成功，但 npm 审计报告 22 个上游依赖漏洞（1 low、3 moderate、16 high、2 critical），需在后续升级阶段单独评估，未自动修复以免改变基线。
+- 依赖安装：`npm ci` 成功；引入快照最初报告 22 个上游依赖漏洞（1 low、3 moderate、16 high、2 critical），随后通过兼容版本升级将完整依赖与生产依赖审计结果均降为 0。
 - 未运行 Docker 全栈与 Playwright 端到端测试：本机 Docker daemon 未启动，当前 WSL 环境也没有可用的 `/bin/bash`。
