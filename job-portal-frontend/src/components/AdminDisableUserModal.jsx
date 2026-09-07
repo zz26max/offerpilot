@@ -25,18 +25,18 @@ const AdminDisableUserModal = ({
                 <div className="modal-content">
                     <div className="modal-header">
                         <h2 className="modal-title h5" id="disable-user-modal-title">
-                            Disable {userLabel}?
+                            确认停用 {userLabel}？
                         </h2>
                         <button
                             type="button"
                             className="btn-close"
-                            aria-label="Close disable dialog"
+                            aria-label="关闭停用确认弹窗"
                             onClick={onCancel}
                         />
                     </div>
                     <div className="modal-body">
                         <p className="body-text mb-0">
-                            This user will be signed out and will not be able to log in.
+                            停用后，该用户将立即退出登录，且无法再次登录。
                         </p>
                     </div>
                     <div className="modal-footer">
@@ -46,10 +46,10 @@ const AdminDisableUserModal = ({
                             ref={cancelButtonRef}
                             onClick={onCancel}
                         >
-                            Cancel
+                            取消
                         </button>
                         <button type="button" className="btn btn-danger" onClick={onConfirm}>
-                            Disable User
+                            确认停用
                         </button>
                     </div>
                 </div>

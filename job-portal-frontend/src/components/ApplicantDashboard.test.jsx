@@ -9,7 +9,7 @@ vi.mock('./Navbar', () => ({
     default: () => <div data-testid="navbar-mock">Navbar</div>
 }));
 
-const applicationDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const applicationDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -54,10 +54,10 @@ describe('ApplicantDashboard', () => {
             }
         });
         expect(screen.getByText(byTextContent('Java Developer'))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent('Company: ACME'))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent('Application Status: Not applied'))).toBeInTheDocument();
-        expect(screen.getByLabelText('Application status color legend')).toHaveTextContent('Not applied');
-        expect(screen.getByLabelText('Application status color legend')).toHaveTextContent('Accepted');
+        expect(screen.getByText(byTextContent('公司：ACME'))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent('投递状态：未投递'))).toBeInTheDocument();
+        expect(screen.getByLabelText('投递状态图例')).toHaveTextContent('未投递');
+        expect(screen.getByLabelText('投递状态图例')).toHaveTextContent('已录用');
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-not-applied');
     });
 
@@ -118,8 +118,8 @@ describe('ApplicantDashboard', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Apply'})).toBeInTheDocument());
-        await user.click(screen.getByRole('button', {name: 'Apply'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: '立即投递'})).toBeInTheDocument());
+        await user.click(screen.getByRole('button', {name: '立即投递'}));
 
         await waitFor(() =>
             expect(axios.post).toHaveBeenCalledWith(
@@ -132,11 +132,11 @@ describe('ApplicantDashboard', () => {
                 }
             )
         );
-        expect(await screen.findByText('Application submitted successfully.')).toBeInTheDocument();
-        expect(screen.getByText(byTextContent('Application Status: Applied'))).toBeInTheDocument();
+        expect(await screen.findByText('投递成功，祝你求职顺利！')).toBeInTheDocument();
+        expect(screen.getByText(byTextContent('投递状态：已投递'))).toBeInTheDocument();
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-applied');
-        expect(screen.getByText('Your application has been submitted and is waiting for review.')).toBeInTheDocument();
-        expect(screen.getByRole('button', {name: 'Withdraw'})).toBeInTheDocument();
+        expect(screen.getByText('简历已投递，等待招聘方处理。')).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: '撤回投递'})).toBeInTheDocument();
     });
 
     it('should show inline message when apply request fails', async () => {
@@ -157,7 +157,7 @@ describe('ApplicantDashboard', () => {
             response: {
                 status: 500,
                 data: {
-                    message: 'A server error occurred while processing your request.'
+                    message: '暂时无法投递，请稍后重试。'
                 }
             }
         });
@@ -165,10 +165,10 @@ describe('ApplicantDashboard', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Apply'})).toBeInTheDocument());
-        await user.click(screen.getByRole('button', {name: 'Apply'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: '立即投递'})).toBeInTheDocument());
+        await user.click(screen.getByRole('button', {name: '立即投递'}));
 
-        expect(await screen.findByText('A server error occurred while processing your request.')).toBeInTheDocument();
+        expect(await screen.findByText('暂时无法投递，请稍后重试。')).toBeInTheDocument();
     });
 
     it('should disable apply and show status when an application already exists', async () => {
@@ -202,12 +202,12 @@ describe('ApplicantDashboard', () => {
 
         renderWithProviders(<ApplicantDashboard/>);
 
-        expect(await screen.findByText(byTextContent('Application Status: Applied'))).toBeInTheDocument();
+        expect(await screen.findByText(byTextContent('投递状态：已投递'))).toBeInTheDocument();
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-applied');
-        expect(screen.getByText(byTextContent(`Applied On: ${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
-        expect(screen.queryByText(/Last Updated:/)).not.toBeInTheDocument();
-        expect(screen.getByText('Your application has been submitted and is waiting for review.')).toBeInTheDocument();
-        expect(screen.getByRole('button', {name: 'Withdraw'})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent(`投递时间：${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
+        expect(screen.queryByText(/更新时间：/)).not.toBeInTheDocument();
+        expect(screen.getByText('简历已投递，等待招聘方处理。')).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: '撤回投递'})).toBeInTheDocument();
         expect(axios.post).not.toHaveBeenCalled();
     });
 
@@ -252,8 +252,8 @@ describe('ApplicantDashboard', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Withdraw'})).toBeInTheDocument());
-        await user.click(screen.getByRole('button', {name: 'Withdraw'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: '撤回投递'})).toBeInTheDocument());
+        await user.click(screen.getByRole('button', {name: '撤回投递'}));
 
         await waitFor(() =>
             expect(axios.put).toHaveBeenCalledWith(
@@ -270,12 +270,12 @@ describe('ApplicantDashboard', () => {
             )
         );
 
-        expect(await screen.findByText('Application withdrawn successfully.')).toBeInTheDocument();
-        expect(screen.getByText(byTextContent('Application Status: Withdrawn'))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent(`Applied On: ${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent(`Last Updated: ${applicationDateTimeFormatter.format(new Date(updatedAt))}`))).toBeInTheDocument();
-        expect(screen.getByText('You withdrew this application and can apply again.')).toBeInTheDocument();
-        expect(screen.getByRole('button', {name: 'Apply Again'})).toBeInTheDocument();
+        expect(await screen.findByText('投递已撤回。你仍可以再次投递该岗位。')).toBeInTheDocument();
+        expect(screen.getByText(byTextContent('投递状态：已撤回'))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent(`投递时间：${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent(`更新时间：${applicationDateTimeFormatter.format(new Date(updatedAt))}`))).toBeInTheDocument();
+        expect(screen.getByText('投递已撤回，你可以再次投递。')).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: '再次投递'})).toBeInTheDocument();
     });
 
     it('should show backend message when withdraw request fails', async () => {
@@ -314,10 +314,10 @@ describe('ApplicantDashboard', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Withdraw'})).toBeInTheDocument());
-        await user.click(screen.getByRole('button', {name: 'Withdraw'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: '撤回投递'})).toBeInTheDocument());
+        await user.click(screen.getByRole('button', {name: '撤回投递'}));
 
-        expect(await screen.findByText('Applicants can only set application status to WITHDRAWN')).toBeInTheDocument();
+        expect(await screen.findByText('求职者只能撤回自己的投递。')).toBeInTheDocument();
     });
 
     it('should show reviewing helper text for reviewed applications', async () => {
@@ -347,9 +347,9 @@ describe('ApplicantDashboard', () => {
 
         renderWithProviders(<ApplicantDashboard/>);
 
-        expect(await screen.findByText(byTextContent('Application Status: Reviewing'))).toBeInTheDocument();
+        expect(await screen.findByText(byTextContent('投递状态：筛选中'))).toBeInTheDocument();
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-reviewing');
-        expect(screen.getByText('Your application is currently under review.')).toBeInTheDocument();
+        expect(screen.getByText('招聘方正在筛选你的投递。')).toBeInTheDocument();
     });
 
     it('should show accepted helper text for reviewed applications', async () => {
@@ -379,9 +379,9 @@ describe('ApplicantDashboard', () => {
 
         renderWithProviders(<ApplicantDashboard/>);
 
-        expect(await screen.findByText(byTextContent('Application Status: Accepted'))).toBeInTheDocument();
+        expect(await screen.findByText(byTextContent('投递状态：已录用'))).toBeInTheDocument();
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-accepted');
-        expect(screen.getByText('Your application has been accepted.')).toBeInTheDocument();
+        expect(screen.getByText('恭喜，你已通过当前招聘流程。')).toBeInTheDocument();
     });
 
     it('should show rejected helper text for reviewed applications', async () => {
@@ -411,8 +411,8 @@ describe('ApplicantDashboard', () => {
 
         renderWithProviders(<ApplicantDashboard/>);
 
-        expect(await screen.findByText(byTextContent('Application Status: Rejected'))).toBeInTheDocument();
+        expect(await screen.findByText(byTextContent('投递状态：未通过'))).toBeInTheDocument();
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-rejected');
-        expect(screen.getByText('Your application was not selected.')).toBeInTheDocument();
+        expect(screen.getByText('本次投递暂未通过。')).toBeInTheDocument();
     });
 });

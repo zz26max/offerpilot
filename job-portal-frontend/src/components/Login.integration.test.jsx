@@ -48,9 +48,9 @@ describe('Login integration', () => {
         const {store} = renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
         await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/applicant-dashboard'));
         expect(localStorage.getItem('token')).toBe('jwt-123');
@@ -69,11 +69,11 @@ describe('Login integration', () => {
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('登录失败，请检查邮箱和密码后重试。');
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
@@ -87,11 +87,11 @@ describe('Login integration', () => {
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Your account is disabled. Please contact an administrator.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('账号已停用，请联系管理员。');
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 });

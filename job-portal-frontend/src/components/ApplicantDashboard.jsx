@@ -3,11 +3,12 @@ import Navbar from "./Navbar";
 import axios from "axios";
 import {BACKEND_API_URL} from '../config/backend'
 import {useSessionTimeout} from "../auth/session";
+import {formatStatus, localizeApiMessage} from "../i18n/messages";
 
 /**
  * Formatter for application date and time.
  */
-const applicationDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const applicationDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -15,31 +16,13 @@ const applicationDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
     minute: "2-digit"
 });
 
-/**
- * Formats a status string for display.
- *
- * @param {string} status - The status string.
- * @returns {string} The formatted status string.
- */
-const formatStatus = (status) => {
-    if (!status) {
-        return "Not applied";
-    }
-
-    return status
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-};
-
 const applicationStatusLegend = [
-    {status: null, label: "Not applied", className: "application-card-not-applied"},
-    {status: "APPLIED", label: "Applied", className: "application-card-applied"},
-    {status: "REVIEWING", label: "Reviewing", className: "application-card-reviewing"},
-    {status: "ACCEPTED", label: "Accepted", className: "application-card-accepted"},
-    {status: "REJECTED", label: "Rejected", className: "application-card-rejected"},
-    {status: "WITHDRAWN", label: "Withdrawn", className: "application-card-withdrawn"}
+    {status: null, label: "未投递", className: "application-card-not-applied"},
+    {status: "APPLIED", label: "已投递", className: "application-card-applied"},
+    {status: "REVIEWING", label: "筛选中", className: "application-card-reviewing"},
+    {status: "ACCEPTED", label: "已录用", className: "application-card-accepted"},
+    {status: "REJECTED", label: "未通过", className: "application-card-rejected"},
+    {status: "WITHDRAWN", label: "已撤回", className: "application-card-withdrawn"}
 ];
 
 /**
@@ -74,17 +57,17 @@ const getApplicantJobCardStatusClass = (status) => {
 const getStatusHelperText = (status) => {
     switch (status) {
         case "APPLIED":
-            return "Your application has been submitted and is waiting for review.";
+            return "简历已投递，等待招聘方处理。";
         case "REVIEWING":
-            return "Your application is currently under review.";
+            return "招聘方正在筛选你的投递。";
         case "ACCEPTED":
-            return "Your application has been accepted.";
+            return "恭喜，你已通过当前招聘流程。";
         case "REJECTED":
-            return "Your application was not selected.";
+            return "本次投递暂未通过。";
         case "WITHDRAWN":
-            return "You withdrew this application and can apply again.";
+            return "投递已撤回，你可以再次投递。";
         default:
-            return "You have not applied to this job yet.";
+            return "你还没有投递这个岗位。";
     }
 };
 
@@ -166,19 +149,19 @@ const buildApplicationsLookup = (applications) => {
  */
 const getActionLabel = (application, isSubmitting) => {
     if (isSubmitting) {
-        return canWithdraw(application) ? "Withdrawing..." : "Applying...";
+        return canWithdraw(application) ? "正在撤回…" : "正在投递…";
     }
 
     if (!application) {
-        return "Apply";
+        return "立即投递";
     }
 
     if (application.status === "WITHDRAWN") {
-        return "Apply Again";
+        return "再次投递";
     }
 
     if (application.status === "APPLIED") {
-        return "Withdraw";
+        return "撤回投递";
     }
 
     return formatStatus(application.status);
@@ -214,7 +197,7 @@ const ApplicantDashboard = () => {
             if (handleSessionTimeout(error)) {
                 return;
             }
-            setErrorMessage("We couldn't load your jobs and applications right now. Please refresh and try again.");
+            setErrorMessage("暂时无法加载岗位和投递记录，请刷新页面后重试。");
         }
     }, [handleSessionTimeout]);
 
@@ -246,16 +229,16 @@ const ApplicantDashboard = () => {
                     ...response.data
                 }
             }));
-            setStatusMessage("Application submitted successfully.");
+            setStatusMessage("投递成功，祝你求职顺利！");
         } catch (error) {
             if (handleSessionTimeout(error)) {
                 return;
             }
             const backendMessage = error?.response?.data?.message;
-            const message = backendMessage
-                ? backendMessage
-                : "We couldn't submit your application right now. Please try again.";
-            setErrorMessage(message);
+            setErrorMessage(localizeApiMessage(
+                backendMessage,
+                "暂时无法投递，请稍后重试。"
+            ));
         } finally {
             setSubmittingJobs((prev) => {
                 const next = {...prev};
@@ -294,16 +277,16 @@ const ApplicantDashboard = () => {
                     ...response.data
                 }
             }));
-            setStatusMessage("Application withdrawn successfully.");
+            setStatusMessage("投递已撤回。你仍可以再次投递该岗位。");
         } catch (error) {
             if (handleSessionTimeout(error)) {
                 return;
             }
             const backendMessage = error?.response?.data?.message;
-            const message = backendMessage
-                ? backendMessage
-                : "We couldn't withdraw your application right now. Please try again.";
-            setErrorMessage(message);
+            setErrorMessage(localizeApiMessage(
+                backendMessage,
+                "暂时无法撤回投递，请稍后重试。"
+            ));
         } finally {
             setSubmittingJobs((prev) => {
                 const next = {...prev};
@@ -317,8 +300,8 @@ const ApplicantDashboard = () => {
         <>
             <Navbar/>
             <div className="container dashboard-shell">
-                <h1 className="section-title">Applicant Dashboard</h1>
-                <div className="status-legend applicant-status-legend" aria-label="Application status color legend">
+                <h1 className="section-title">我的求职看板</h1>
+                <div className="status-legend applicant-status-legend" aria-label="投递状态图例">
                     {applicationStatusLegend.map((item) => (
                         <span className="status-legend-item" key={item.label}>
                             <span className={`status-legend-swatch ${item.className}`} aria-hidden="true"></span>
@@ -330,7 +313,9 @@ const ApplicantDashboard = () => {
                 {errorMessage ? <p className="body-text text-danger">{errorMessage}</p> : null}
                 <div className="row g-4">
                     {
-                        jobs.map((job, index) => (
+                        jobs.length === 0 ? (
+                            <p className="body-text">暂无可投递岗位。</p>
+                        ) : jobs.map((job, index) => (
                             (() => {
                                 const application = getJobApplication(applicationsByJobId, job.id);
                                 const isSubmitting = !!submittingJobs[job.id];
@@ -347,28 +332,28 @@ const ApplicantDashboard = () => {
                                             <div className="card-body">
                                                 <h4 className="heading-text">{job.title}</h4>
                                                 <p className="body-text">
-                                                    <span className="metadata-label">Details:</span> {job.description}
+                                                    <span className="metadata-label">岗位描述：</span>{job.description}
                                                 </p>
                                                 <p className="body-text">
-                                                    <span className="metadata-label">Company:</span> {job.company}
+                                                    <span className="metadata-label">公司：</span>{job.company}
                                                 </p>
                                                 <p className="body-text muted-meta">
                                                     <span
-                                                        className="metadata-label">Posted Date:</span> {job.postedDate}
+                                                        className="metadata-label">发布时间：</span>{formatApplicationTimestamp(job.createdAt || job.postedDate)}
                                                 </p>
                                                 <p className="body-text">
                                                     <span
-                                                        className="metadata-label">Application Status:</span> {formatStatus(applicationsByJobId[job.id]?.status)}
+                                                        className="metadata-label">投递状态：</span>{formatStatus(applicationsByJobId[job.id]?.status, "未投递")}
                                                 </p>
                                                 {appliedOn ? (
                                                     <p className="body-text muted-meta">
-                                                        <span className="metadata-label">Applied On:</span> {appliedOn}
+                                                        <span className="metadata-label">投递时间：</span>{appliedOn}
                                                     </p>
                                                 ) : null}
                                                 {lastUpdated ? (
                                                     <p className="body-text muted-meta">
                                                         <span
-                                                            className="metadata-label">Last Updated:</span> {lastUpdated}
+                                                            className="metadata-label">更新时间：</span>{lastUpdated}
                                                     </p>
                                                 ) : null}
                                                 <p className="body-text muted-meta">

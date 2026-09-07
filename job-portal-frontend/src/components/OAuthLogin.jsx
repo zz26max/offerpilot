@@ -42,7 +42,7 @@ const OAuthLogin = () => {
                 })
                 .catch(error => {
                     console.error("Error fetching user details:", error);
-                    alert("Failed to fetch user details. Please log in again.");
+                    alert("无法获取账号信息，请重新登录。");
                     navigate("/");
                 });
         };
@@ -64,19 +64,19 @@ const OAuthLogin = () => {
                 })
                 .catch(error => {
                     console.error("Error exchanging code for token:", error);
-                    alert("Failed to log in. Please try again.");
+                    alert("登录失败，请重试。");
                     navigate("/");
                 });
         } else {
             console.error("No authorization code found in URL.");
-            alert("Google login did not return a valid token. Please try again.");
+            alert("Google 登录未返回有效凭证，请重试。");
             navigate("/");
         }
     }, [dispatch, navigate]);
 
     return (
         <div className="oauth-loading">
-            <h2>Logging in...</h2>
+            <h2>正在登录…</h2>
         </div>
     );
 };

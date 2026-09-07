@@ -1,6 +1,6 @@
 const AdminUsersPanel = ({
     users,
-    emptyMessage = "No users available.",
+    emptyMessage = "暂无用户。",
     updatingUserId,
     formatStatus,
     onUpdateEnabled
@@ -20,13 +20,13 @@ const AdminUsersPanel = ({
                             <div className="card-body">
                                 <h4 className="heading-text">{user.name}</h4>
                                 <p className="body-text">
-                                    <span className="metadata-label">Email:</span> {user.email}
+                                    <span className="metadata-label">邮箱：</span>{user.email}
                                 </p>
                                 <p className="body-text">
-                                    <span className="metadata-label">Role:</span> {formatStatus(user.role)}
+                                    <span className="metadata-label">角色：</span>{formatStatus(user.role)}
                                 </p>
                                 <p className="body-text">
-                                    <span className="metadata-label">Status:</span> {user.enabled ? "Enabled" : "Disabled"}
+                                    <span className="metadata-label">账号状态：</span>{user.enabled ? "已启用" : "已停用"}
                                 </p>
                                 <div className="d-flex flex-wrap gap-2 admin-card-actions">
                                     <button
@@ -35,11 +35,11 @@ const AdminUsersPanel = ({
                                         disabled={!isApplicant || isUpdating}
                                         onClick={() => onUpdateEnabled(user.id, !user.enabled)}
                                     >
-                                        {isUpdating ? "Saving..." : user.enabled ? "Disable" : "Enable"}
+                                        {isUpdating ? "正在保存…" : user.enabled ? "停用账号" : "启用账号"}
                                     </button>
                                 </div>
                                 {!isApplicant ? (
-                                    <p className="body-text muted-meta mt-3 mb-0">Admin users are read-only here.</p>
+                                    <p className="body-text muted-meta mt-3 mb-0">管理员账号仅支持查看。</p>
                                 ) : null}
                             </div>
                         </div>

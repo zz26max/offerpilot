@@ -21,12 +21,12 @@ const AdminJobForm = ({
     return (
         <div className="card login-panel p-4">
             <div className="card-header login-header text-center">
-                <h3 className="mb-0 login-title">{editingJobId ? "Edit Job" : "Add New Job"}</h3>
+                <h3 className="mb-0 login-title">{editingJobId ? "编辑岗位" : "发布新岗位"}</h3>
             </div>
             <div className="card-body">
                 <form onSubmit={onSubmit}>
                     <div className="mb-3">
-                        <label className="form-label body-text" htmlFor="job-title">Title</label>
+                        <label className="form-label body-text" htmlFor="job-title">岗位名称</label>
                         <input
                             id="job-title"
                             name="title"
@@ -37,7 +37,7 @@ const AdminJobForm = ({
                         />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label body-text" htmlFor="job-company">Company</label>
+                        <label className="form-label body-text" htmlFor="job-company">公司名称</label>
                         <input
                             id="job-company"
                             name="company"
@@ -48,7 +48,7 @@ const AdminJobForm = ({
                         />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label body-text" htmlFor="job-description">Description</label>
+                        <label className="form-label body-text" htmlFor="job-description">岗位描述</label>
                         <textarea
                             id="job-description"
                             name="description"
@@ -66,8 +66,8 @@ const AdminJobForm = ({
                             disabled={isSubmitting}
                         >
                             {isSubmitting
-                                ? (editingJobId ? "Saving..." : "Creating...")
-                                : (editingJobId ? "Save Changes" : "Create Job")}
+                                ? (editingJobId ? "正在保存…" : "正在发布…")
+                                : (editingJobId ? "保存修改" : "发布岗位")}
                         </button>
                         {editingJobId ? (
                             <button
@@ -75,7 +75,7 @@ const AdminJobForm = ({
                                 className="btn btn-outline-secondary w-100"
                                 onClick={onCancelEdit}
                             >
-                                Cancel Edit
+                                取消编辑
                             </button>
                         ) : null}
                     </div>

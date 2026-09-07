@@ -2,6 +2,7 @@ import {useCallback} from "react";
 import {useDispatch} from "react-redux";
 import {useNavigate} from "react-router-dom";
 import {setUserDetails} from "../store/userActions";
+import {localizeApiMessage} from "../i18n/messages";
 
 export const emptyUserState = {
     username: "",
@@ -9,11 +10,11 @@ export const emptyUserState = {
     role: ""
 };
 
-export const defaultSessionMessage = "Your session has expired. Please log in again.";
+export const defaultSessionMessage = "登录状态已失效，请重新登录。";
 
 export const getSessionMessage = (error) => {
     const backendMessage = error?.response?.data?.message;
-    return backendMessage || defaultSessionMessage;
+    return localizeApiMessage(backendMessage, defaultSessionMessage);
 };
 
 export const isUnauthorizedError = (error) => error?.response?.status === 401;

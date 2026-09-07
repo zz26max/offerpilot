@@ -62,16 +62,16 @@ describe('AdminDashboard integration', () => {
         renderWithProviders(<AdminDashboard/>);
 
         await waitFor(() => expect(screen.getByText(byTextContent('Platform Engineer'))).toBeInTheDocument());
-        expect(screen.getByRole('tab', {name: /^Jobs \(\d+\)$/})).toHaveAttribute('aria-selected', 'true');
-        const summary = screen.getByLabelText('Admin dashboard summary');
-        expect(within(summary).getByText('Total Jobs').closest('.admin-stat-pill')).toHaveTextContent('1');
-        expect(within(summary).getByText('Applications').closest('.admin-stat-pill')).toHaveTextContent('1');
-        expect(screen.getByLabelText('Jobs color legend')).toHaveTextContent('Open');
-        expect(screen.getByLabelText('Jobs color legend')).toHaveTextContent('Closed');
-        expect(screen.getByText('Open: 1 | Closed: 0')).toBeInTheDocument();
-        expect(screen.getByText('Applied: 1 | Reviewing: 0 | Accepted: 0 | Rejected: 0 | Withdrawn: 0')).toBeInTheDocument();
-        expect(screen.getByText(byTextContent('Applications: 1'))).toBeInTheDocument();
-        expect(screen.getByRole('tab', {name: /^Users \(\d+\)$/})).toBeInTheDocument();
+        expect(screen.getByRole('tab', {name: /^岗位管理 \(\d+\)$/})).toHaveAttribute('aria-selected', 'true');
+        const summary = screen.getByLabelText('管理概览');
+        expect(within(summary).getByText('岗位总数').closest('.admin-stat-pill')).toHaveTextContent('1');
+        expect(within(summary).getByText('投递记录').closest('.admin-stat-pill')).toHaveTextContent('1');
+        expect(screen.getByLabelText('岗位状态图例')).toHaveTextContent('招聘中');
+        expect(screen.getByLabelText('岗位状态图例')).toHaveTextContent('已关闭');
+        expect(screen.getByText('招聘中：1 ｜ 已关闭：0')).toBeInTheDocument();
+        expect(screen.getByText('已投递: 1 ｜ 筛选中: 0 ｜ 已录用: 0 ｜ 未通过: 0 ｜ 已撤回: 0')).toBeInTheDocument();
+        expect(screen.getByText(byTextContent('投递人数：1'))).toBeInTheDocument();
+        expect(screen.getByRole('tab', {name: /^用户管理 \(\d+\)$/})).toBeInTheDocument();
     });
 
     it('preserves timestamps when the application status update response is partial', async () => {
@@ -117,21 +117,21 @@ describe('AdminDashboard integration', () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await user.click(screen.getByRole('tab', {name: /^Applications \(\d+\)$/}));
-        await waitFor(() => expect(screen.getByLabelText('Status')).toBeInTheDocument());
+        await user.click(screen.getByRole('tab', {name: /^投递管理 \(\d+\)$/}));
+        await waitFor(() => expect(screen.getByLabelText('调整状态')).toBeInTheDocument());
 
-        const applicationCard = screen.getByText(byTextContent('Applicant: Maya Patel')).closest('.application-card');
-        expect(within(applicationCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(applicationCard).queryByText(/Last Updated:/)).not.toBeInTheDocument();
+        const applicationCard = screen.getByText(byTextContent('求职者：Maya Patel')).closest('.application-card');
+        expect(within(applicationCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(applicationCard).queryByText(/更新时间：/)).not.toBeInTheDocument();
 
-        await user.selectOptions(screen.getByLabelText('Status'), 'REVIEWING');
-        await user.click(screen.getByRole('button', {name: 'Save'}));
+        await user.selectOptions(screen.getByLabelText('调整状态'), 'REVIEWING');
+        await user.click(screen.getByRole('button', {name: '保存'}));
 
-        expect(await screen.findByText('Application status updated successfully.')).toBeInTheDocument();
-        const updatedApplicationCard = screen.getByText(byTextContent('Applicant: Maya Patel')).closest('.application-card');
-        expect(within(updatedApplicationCard).getByText(byTextContent('Current Status: Reviewing'))).toBeInTheDocument();
-        expect(within(updatedApplicationCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(updatedApplicationCard).getByText(/Last Updated:/)).toBeInTheDocument();
+        expect(await screen.findByText('投递状态已更新。')).toBeInTheDocument();
+        const updatedApplicationCard = screen.getByText(byTextContent('求职者：Maya Patel')).closest('.application-card');
+        expect(within(updatedApplicationCard).getByText(byTextContent('当前状态：筛选中'))).toBeInTheDocument();
+        expect(within(updatedApplicationCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(updatedApplicationCard).getByText(/更新时间：/)).toBeInTheDocument();
     });
 
     it('disables applicant users through the admin users network flow', async () => {
@@ -174,22 +174,22 @@ describe('AdminDashboard integration', () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await user.click(await screen.findByRole('tab', {name: /^Users \(\d+\)$/}));
+        await user.click(await screen.findByRole('tab', {name: /^用户管理 \(\d+\)$/}));
         const userCard = screen.getByText('Sofia Ribeiro').closest('.user-card');
-        expect(within(userCard).getByText('Email:')).toBeInTheDocument();
+        expect(within(userCard).getByText('邮箱：')).toBeInTheDocument();
         expect(within(userCard).getByText(/sofia\.ribeiro@example\.com/)).toBeInTheDocument();
-        expect(within(userCard).getByText('Status:')).toBeInTheDocument();
-        expect(within(userCard).getByText(/Enabled/)).toBeInTheDocument();
+        expect(within(userCard).getByText('账号状态：')).toBeInTheDocument();
+        expect(within(userCard).getByText(/已启用/)).toBeInTheDocument();
 
-        await user.click(within(userCard).getByRole('button', {name: 'Disable'}));
+        await user.click(within(userCard).getByRole('button', {name: '停用账号'}));
 
-        const dialog = screen.getByRole('dialog', {name: 'Disable Sofia Ribeiro?'});
-        expect(within(dialog).getByText('This user will be signed out and will not be able to log in.')).toBeInTheDocument();
-        await user.click(within(dialog).getByRole('button', {name: 'Disable User'}));
-        expect(await screen.findByText('User Sofia Ribeiro was disabled successfully.')).toBeInTheDocument();
-        expect(screen.getByRole('tab', {name: 'Users (2)'})).toBeInTheDocument();
+        const dialog = screen.getByRole('dialog', {name: '确认停用 Sofia Ribeiro？'});
+        expect(within(dialog).getByText('停用后，该用户将立即退出登录，且无法再次登录。')).toBeInTheDocument();
+        await user.click(within(dialog).getByRole('button', {name: '确认停用'}));
+        expect(await screen.findByText('Sofia Ribeiro 的账号已停用。')).toBeInTheDocument();
+        expect(screen.getByRole('tab', {name: '用户管理 (2)'})).toBeInTheDocument();
         const updatedUserCard = screen.getByText('Sofia Ribeiro').closest('.user-card');
-        expect(within(updatedUserCard).getByText(/Disabled/)).toBeInTheDocument();
-        expect(within(updatedUserCard).getByRole('button', {name: 'Enable'})).toBeInTheDocument();
+        expect(within(updatedUserCard).getByText(/已停用/)).toBeInTheDocument();
+        expect(within(updatedUserCard).getByRole('button', {name: '启用账号'})).toBeInTheDocument();
     });
 });

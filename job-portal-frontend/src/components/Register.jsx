@@ -2,6 +2,7 @@ import axios from "axios";
 import {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {BACKEND_API_URL} from "../config/backend";
+import {localizeApiMessage} from "../i18n/messages";
 
 const Register = () => {
     const [form, setForm] = useState({
@@ -23,7 +24,7 @@ const Register = () => {
         setErrorMessage("");
 
         if (form.password !== form.confirmPassword) {
-            setErrorMessage("Passwords must match.");
+            setErrorMessage("两次输入的密码不一致。");
             return;
         }
 
@@ -36,11 +37,14 @@ const Register = () => {
             });
             navigate("/", {
                 state: {
-                    registrationMessage: "Account created. Please log in with your email and password."
+                    registrationMessage: "注册成功，请使用邮箱和密码登录。"
                 }
             });
         } catch (error) {
-            setErrorMessage(error?.response?.data?.message || "We couldn't create your account right now. Please try again.");
+            setErrorMessage(localizeApiMessage(
+                error?.response?.data?.message,
+                "暂时无法创建账号，请稍后重试。"
+            ));
         } finally {
             setIsSubmitting(false);
         }
@@ -53,7 +57,7 @@ const Register = () => {
                     <div className="col-lg-7 col-xl-6">
                         <div className="card login-panel p-4">
                             <div className="card-header login-header text-center">
-                                <h3 className="mb-0 login-title">Create Applicant Account</h3>
+                                <h3 className="mb-0 login-title">注册求职者账号</h3>
                             </div>
 
                             <div className="card-body">
@@ -67,7 +71,7 @@ const Register = () => {
                                     registerApplicant();
                                 }}>
                                     <div className="mb-3">
-                                        <label className="form-label body-text" htmlFor="register-name">Name</label>
+                                        <label className="form-label body-text" htmlFor="register-name">姓名</label>
                                         <input
                                             id="register-name"
                                             name="name"
@@ -79,7 +83,7 @@ const Register = () => {
                                         />
                                     </div>
                                     <div className="mb-3">
-                                        <label className="form-label body-text" htmlFor="register-email">Email</label>
+                                        <label className="form-label body-text" htmlFor="register-email">邮箱</label>
                                         <input
                                             id="register-email"
                                             name="email"
@@ -92,7 +96,7 @@ const Register = () => {
                                         />
                                     </div>
                                     <div className="mb-3">
-                                        <label className="form-label body-text" htmlFor="register-password">Password</label>
+                                        <label className="form-label body-text" htmlFor="register-password">密码</label>
                                         <input
                                             id="register-password"
                                             name="password"
@@ -105,7 +109,7 @@ const Register = () => {
                                         />
                                     </div>
                                     <div className="mb-3">
-                                        <label className="form-label body-text" htmlFor="register-confirm-password">Confirm Password</label>
+                                        <label className="form-label body-text" htmlFor="register-confirm-password">确认密码</label>
                                         <input
                                             id="register-confirm-password"
                                             name="confirmPassword"
@@ -119,14 +123,14 @@ const Register = () => {
                                     </div>
                                     <div className="text-center">
                                         <button type="submit" className="btn btn-accent-tertiary w-75" disabled={isSubmitting}>
-                                            {isSubmitting ? "Creating Account..." : "Create Account"}
+                                            {isSubmitting ? "正在注册…" : "注册账号"}
                                         </button>
                                     </div>
                                 </form>
                             </div>
 
                             <div className="card-footer login-footer text-center">
-                                <small>Already have an account? <Link to="/">Log in</Link></small>
+                                <small>已有账号？<Link to="/">返回登录</Link></small>
                             </div>
                         </div>
                     </div>

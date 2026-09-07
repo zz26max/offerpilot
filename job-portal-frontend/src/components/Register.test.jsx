@@ -35,11 +35,11 @@ describe('Register', () => {
         renderWithProviders(<Register/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Name'), 'Rafael Costa');
-        await user.type(screen.getByLabelText('Email'), 'rafael@example.com');
-        await user.type(screen.getByLabelText('Password'), 'applicant123');
-        await user.type(screen.getByLabelText('Confirm Password'), 'applicant123');
-        await user.click(screen.getByRole('button', {name: 'Create Account'}));
+        await user.type(screen.getByLabelText('姓名'), 'Rafael Costa');
+        await user.type(screen.getByLabelText('邮箱'), 'rafael@example.com');
+        await user.type(screen.getByLabelText('密码'), 'applicant123');
+        await user.type(screen.getByLabelText('确认密码'), 'applicant123');
+        await user.click(screen.getByRole('button', {name: '注册账号'}));
 
         await waitFor(() =>
             expect(axios.post).toHaveBeenCalledWith(
@@ -53,7 +53,7 @@ describe('Register', () => {
         );
         expect(mockNavigate).toHaveBeenCalledWith('/', {
             state: {
-                registrationMessage: 'Account created. Please log in with your email and password.'
+                registrationMessage: '注册成功，请使用邮箱和密码登录。'
             }
         });
     });
@@ -62,13 +62,13 @@ describe('Register', () => {
         renderWithProviders(<Register/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Name'), 'Rafael Costa');
-        await user.type(screen.getByLabelText('Email'), 'rafael@example.com');
-        await user.type(screen.getByLabelText('Password'), 'applicant123');
-        await user.type(screen.getByLabelText('Confirm Password'), 'different123');
-        await user.click(screen.getByRole('button', {name: 'Create Account'}));
+        await user.type(screen.getByLabelText('姓名'), 'Rafael Costa');
+        await user.type(screen.getByLabelText('邮箱'), 'rafael@example.com');
+        await user.type(screen.getByLabelText('密码'), 'applicant123');
+        await user.type(screen.getByLabelText('确认密码'), 'different123');
+        await user.click(screen.getByRole('button', {name: '注册账号'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Passwords must match.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('两次输入的密码不一致。');
         expect(axios.post).not.toHaveBeenCalled();
     });
 
@@ -84,13 +84,13 @@ describe('Register', () => {
         renderWithProviders(<Register/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Name'), 'Rafael Costa');
-        await user.type(screen.getByLabelText('Email'), 'rafael@example.com');
-        await user.type(screen.getByLabelText('Password'), 'applicant123');
-        await user.type(screen.getByLabelText('Confirm Password'), 'applicant123');
-        await user.click(screen.getByRole('button', {name: 'Create Account'}));
+        await user.type(screen.getByLabelText('姓名'), 'Rafael Costa');
+        await user.type(screen.getByLabelText('邮箱'), 'rafael@example.com');
+        await user.type(screen.getByLabelText('密码'), 'applicant123');
+        await user.type(screen.getByLabelText('确认密码'), 'applicant123');
+        await user.click(screen.getByRole('button', {name: '注册账号'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('User email already exists');
+        expect(await screen.findByRole('alert')).toHaveTextContent('该邮箱已注册。');
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 });

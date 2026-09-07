@@ -1,7 +1,7 @@
 /**
  * Formatter for job date and time.
  */
-const jobDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const jobDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -19,7 +19,7 @@ const formatJobPostedAt = (job) => {
     const timestamp = job.createdAt || job.postedDate;
 
     if (!timestamp) {
-        return "Created today";
+        return "今天发布";
     }
 
     const parsedDate = new Date(timestamp);
@@ -65,7 +65,7 @@ const AdminJobList = ({
                           updatingJobStatusId
                       }) => {
     if (jobs.length === 0) {
-        return <p className="body-text">No jobs match the current filters.</p>;
+        return <p className="body-text">没有符合当前筛选条件的岗位。</p>;
     }
 
     return (
@@ -76,19 +76,19 @@ const AdminJobList = ({
                         <div className="card-body">
                             <h4 className="heading-text">{job.title}</h4>
                             <p className="body-text">
-                                <span className="metadata-label">Details:</span> {job.description}
+                                <span className="metadata-label">岗位描述：</span>{job.description}
                             </p>
                             <p className="body-text">
-                                <span className="metadata-label">Company:</span> {job.company}
+                                <span className="metadata-label">公司：</span>{job.company}
                             </p>
                             <p className="body-text muted-meta">
-                                <span className="metadata-label">Posted Date:</span> {formatJobPostedAt(job)}
+                                <span className="metadata-label">发布时间：</span>{formatJobPostedAt(job)}
                             </p>
                             <p className="body-text">
-                                <span className="metadata-label">Status:</span> {formatStatus(job.status)}
+                                <span className="metadata-label">岗位状态：</span>{formatStatus(job.status)}
                             </p>
                             <p className="body-text">
-                                <span className="metadata-label">Applications:</span> {getApplicationCount(job.id)}
+                                <span className="metadata-label">投递人数：</span>{getApplicationCount(job.id)}
                             </p>
                             <div className="d-flex gap-2 admin-card-actions">
                                 <button
@@ -96,7 +96,7 @@ const AdminJobList = ({
                                     className="btn btn-accent-secondary"
                                     onClick={() => onEdit(job)}
                                 >
-                                    Edit
+                                    编辑
                                 </button>
                                 <button
                                     type="button"
@@ -105,10 +105,10 @@ const AdminJobList = ({
                                     onClick={() => onUpdateJobStatus(job.id, job.status === "CLOSED" ? "OPEN" : "CLOSED")}
                                 >
                                     {updatingJobStatusId === job.id
-                                        ? "Saving..."
+                                        ? "正在保存…"
                                         : job.status === "CLOSED"
-                                            ? "Reopen"
-                                            : "Close"}
+                                            ? "重新开放"
+                                            : "关闭岗位"}
                                 </button>
                                 <button
                                     type="button"
@@ -116,7 +116,7 @@ const AdminJobList = ({
                                     disabled={deletingJobId === job.id}
                                     onClick={() => onDelete(job.id)}
                                 >
-                                    {deletingJobId === job.id ? "Deleting..." : "Delete"}
+                                    {deletingJobId === job.id ? "正在删除…" : "删除"}
                                 </button>
                             </div>
                         </div>

@@ -54,17 +54,17 @@ describe('ApplicantDashboard integration', () => {
 
         const appliedJobCard = screen.getByText(byTextContent('Platform Engineer')).closest('.job-card');
         expect(appliedJobCard).toHaveClass('application-card-applied');
-        expect(within(appliedJobCard).getByText(byTextContent('Application Status: Applied'))).toBeInTheDocument();
-        expect(within(appliedJobCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(appliedJobCard).queryByText(/Last Updated:/)).not.toBeInTheDocument();
-        expect(within(appliedJobCard).getByText('Your application has been submitted and is waiting for review.')).toBeInTheDocument();
-        expect(within(appliedJobCard).getByRole('button', {name: 'Withdraw'})).toBeInTheDocument();
+        expect(within(appliedJobCard).getByText(byTextContent('投递状态：已投递'))).toBeInTheDocument();
+        expect(within(appliedJobCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(appliedJobCard).queryByText(/更新时间：/)).not.toBeInTheDocument();
+        expect(within(appliedJobCard).getByText('简历已投递，等待招聘方处理。')).toBeInTheDocument();
+        expect(within(appliedJobCard).getByRole('button', {name: '撤回投递'})).toBeInTheDocument();
 
         const unappliedJobCard = screen.getByText(byTextContent('Frontend Engineer')).closest('.job-card');
         expect(unappliedJobCard).toHaveClass('application-card-not-applied');
-        expect(within(unappliedJobCard).getByText(byTextContent('Application Status: Not applied'))).toBeInTheDocument();
-        expect(within(unappliedJobCard).getByText('You have not applied to this job yet.')).toBeInTheDocument();
-        expect(within(unappliedJobCard).getByRole('button', {name: 'Apply'})).toBeInTheDocument();
+        expect(within(unappliedJobCard).getByText(byTextContent('投递状态：未投递'))).toBeInTheDocument();
+        expect(within(unappliedJobCard).getByText('你还没有投递这个岗位。')).toBeInTheDocument();
+        expect(within(unappliedJobCard).getByRole('button', {name: '立即投递'})).toBeInTheDocument();
     });
 
     it('preserves timestamps when a withdraw response returns a partial payload', async () => {
@@ -98,21 +98,21 @@ describe('ApplicantDashboard integration', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Withdraw'})).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByRole('button', {name: '撤回投递'})).toBeInTheDocument());
 
         const jobCard = screen.getByText(byTextContent('Platform Engineer')).closest('.job-card');
-        expect(within(jobCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(jobCard).queryByText(/Last Updated:/)).not.toBeInTheDocument();
+        expect(within(jobCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(jobCard).queryByText(/更新时间：/)).not.toBeInTheDocument();
 
-        await user.click(within(jobCard).getByRole('button', {name: 'Withdraw'}));
+        await user.click(within(jobCard).getByRole('button', {name: '撤回投递'}));
 
-        expect(await screen.findByText('Application withdrawn successfully.')).toBeInTheDocument();
+        expect(await screen.findByText('投递已撤回。你仍可以再次投递该岗位。')).toBeInTheDocument();
         expect(jobCard).toHaveClass('application-card-withdrawn');
-        expect(within(jobCard).getByText(byTextContent('Application Status: Withdrawn'))).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Last Updated:/)).toBeInTheDocument();
-        expect(within(jobCard).getByText('You withdrew this application and can apply again.')).toBeInTheDocument();
-        expect(within(jobCard).getByRole('button', {name: 'Apply Again'})).toBeInTheDocument();
+        expect(within(jobCard).getByText(byTextContent('投递状态：已撤回'))).toBeInTheDocument();
+        expect(within(jobCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(jobCard).getByText(/更新时间：/)).toBeInTheDocument();
+        expect(within(jobCard).getByText('投递已撤回，你可以再次投递。')).toBeInTheDocument();
+        expect(within(jobCard).getByRole('button', {name: '再次投递'})).toBeInTheDocument();
     });
 
     it('preserves timestamps when a reapply response returns a partial payload', async () => {
@@ -146,20 +146,20 @@ describe('ApplicantDashboard integration', () => {
         renderWithProviders(<ApplicantDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole('button', {name: 'Apply Again'})).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByRole('button', {name: '再次投递'})).toBeInTheDocument());
 
         const jobCard = screen.getByText(byTextContent('Platform Engineer')).closest('.job-card');
-        expect(within(jobCard).getByText(byTextContent('Application Status: Withdrawn'))).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Last Updated:/)).toBeInTheDocument();
+        expect(within(jobCard).getByText(byTextContent('投递状态：已撤回'))).toBeInTheDocument();
+        expect(within(jobCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(jobCard).getByText(/更新时间：/)).toBeInTheDocument();
 
-        await user.click(within(jobCard).getByRole('button', {name: 'Apply Again'}));
+        await user.click(within(jobCard).getByRole('button', {name: '再次投递'}));
 
-        expect(await screen.findByText('Application submitted successfully.')).toBeInTheDocument();
-        expect(within(jobCard).getByText(byTextContent('Application Status: Applied'))).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Applied On:/)).toBeInTheDocument();
-        expect(within(jobCard).getByText(/Last Updated:/)).toBeInTheDocument();
-        expect(within(jobCard).getByText('Your application has been submitted and is waiting for review.')).toBeInTheDocument();
-        expect(within(jobCard).getByRole('button', {name: 'Withdraw'})).toBeInTheDocument();
+        expect(await screen.findByText('投递成功，祝你求职顺利！')).toBeInTheDocument();
+        expect(within(jobCard).getByText(byTextContent('投递状态：已投递'))).toBeInTheDocument();
+        expect(within(jobCard).getByText(/投递时间：/)).toBeInTheDocument();
+        expect(within(jobCard).getByText(/更新时间：/)).toBeInTheDocument();
+        expect(within(jobCard).getByText('简历已投递，等待招聘方处理。')).toBeInTheDocument();
+        expect(within(jobCard).getByRole('button', {name: '撤回投递'})).toBeInTheDocument();
     });
 });

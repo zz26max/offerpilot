@@ -30,7 +30,7 @@ describe('Navbar', () => {
             }
         });
 
-        expect(screen.getByText('Welcome, Alice Smith')).toBeInTheDocument();
+        expect(screen.getByText('你好，Alice Smith')).toBeInTheDocument();
     });
 
     it('should fall back to username when display name is missing', () => {
@@ -44,7 +44,7 @@ describe('Navbar', () => {
             }
         });
 
-        expect(screen.getByText('Welcome, alice@example.com')).toBeInTheDocument();
+        expect(screen.getByText('你好，alice@example.com')).toBeInTheDocument();
     });
 
     it('should clear storage, reset user, and navigate on logout', async () => {
@@ -61,7 +61,7 @@ describe('Navbar', () => {
         });
 
         const user = userEvent.setup();
-        await user.click(screen.getByRole('button', {name: 'Logout'}));
+        await user.click(screen.getByRole('button', {name: '退出登录'}));
 
         expect(localStorage.getItem('token')).toBeNull();
         await waitFor(() => {

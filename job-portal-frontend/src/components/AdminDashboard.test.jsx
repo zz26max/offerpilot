@@ -9,7 +9,7 @@ vi.mock("./Navbar", () => ({
     default: () => <div data-testid="navbar-mock">Navbar</div>
 }));
 
-const jobDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const jobDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -17,7 +17,7 @@ const jobDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
     minute: "2-digit"
 });
 
-const applicationDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const applicationDateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -32,15 +32,15 @@ const openAdminTab = async (user, name) => {
 };
 
 const openAddJobTab = async (user) => {
-    await openAdminTab(user, "Add Job");
+    await openAdminTab(user, "发布岗位");
 };
 
 const openApplicationsTab = async (user) => {
-    await openAdminTab(user, "Applications");
+    await openAdminTab(user, "投递管理");
 };
 
 const openUsersTab = async (user) => {
-    await openAdminTab(user, "Users");
+    await openAdminTab(user, "用户管理");
 };
 
 const byTextContent = (text) => (_, element) => element?.textContent === text;
@@ -115,24 +115,24 @@ describe("AdminDashboard", () => {
                 Authorization: "Bearer jwt-admin"
             }
         });
-        expect(screen.getByRole("heading", {name: "Admin"})).toBeInTheDocument();
-        expect(screen.getByRole("tab", {name: tabNamePattern("Jobs")})).toHaveAttribute("aria-selected", "true");
-        expect(screen.getByRole("tab", {name: "Add Job"})).toBeInTheDocument();
-        expect(screen.getByRole("tab", {name: tabNamePattern("Applications")})).toBeInTheDocument();
-        expect(screen.getByRole("tab", {name: tabNamePattern("Users")})).toBeInTheDocument();
+        expect(screen.getByRole("heading", {name: "管理后台"})).toBeInTheDocument();
+        expect(screen.getByRole("tab", {name: tabNamePattern("岗位管理")})).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByRole("tab", {name: "发布岗位"})).toBeInTheDocument();
+        expect(screen.getByRole("tab", {name: tabNamePattern("投递管理")})).toBeInTheDocument();
+        expect(screen.getByRole("tab", {name: tabNamePattern("用户管理")})).toBeInTheDocument();
         expect(screen.getByText(byTextContent("Java Developer"))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Status: Open"))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Applications: 1"))).toBeInTheDocument();
-        const summary = screen.getByLabelText("Admin dashboard summary");
-        expect(within(summary).getByText("Total Jobs").closest(".admin-stat-pill")).toHaveTextContent("1");
-        expect(within(summary).getByText("Open").closest(".admin-stat-pill")).toHaveTextContent("1");
-        expect(within(summary).getByText("Closed").closest(".admin-stat-pill")).toHaveTextContent("0");
-        expect(within(summary).getByText("Applications").closest(".admin-stat-pill")).toHaveTextContent("1");
-        expect(within(summary).getByText("Users").closest(".admin-stat-pill")).toHaveTextContent("2");
-        expect(screen.getByLabelText("Jobs color legend")).toHaveTextContent("Open");
-        expect(screen.getByLabelText("Jobs color legend")).toHaveTextContent("Closed");
-        expect(screen.getByText("Open: 1 | Closed: 0")).toBeInTheDocument();
-        expect(screen.getByText("Applied: 1 | Reviewing: 0 | Accepted: 0 | Rejected: 0 | Withdrawn: 0")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("岗位状态：招聘中"))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("投递人数：1"))).toBeInTheDocument();
+        const summary = screen.getByLabelText("管理概览");
+        expect(within(summary).getByText("岗位总数").closest(".admin-stat-pill")).toHaveTextContent("1");
+        expect(within(summary).getByText("招聘中").closest(".admin-stat-pill")).toHaveTextContent("1");
+        expect(within(summary).getByText("已关闭").closest(".admin-stat-pill")).toHaveTextContent("0");
+        expect(within(summary).getByText("投递记录").closest(".admin-stat-pill")).toHaveTextContent("1");
+        expect(within(summary).getByText("用户数").closest(".admin-stat-pill")).toHaveTextContent("2");
+        expect(screen.getByLabelText("岗位状态图例")).toHaveTextContent("招聘中");
+        expect(screen.getByLabelText("岗位状态图例")).toHaveTextContent("已关闭");
+        expect(screen.getByText("招聘中：1 ｜ 已关闭：0")).toBeInTheDocument();
+        expect(screen.getByText("已投递: 1 ｜ 筛选中: 0 ｜ 已录用: 0 ｜ 未通过: 0 ｜ 已撤回: 0")).toBeInTheDocument();
     });
 
     it("should clear the session when admin data loading returns unauthorized", async () => {
@@ -194,21 +194,21 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await waitFor(() => expect(screen.getByText(byTextContent("Java Developer"))).toBeInTheDocument());
-        expect(screen.getByRole("tab", {name: tabNamePattern("Jobs")})).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByRole("tab", {name: tabNamePattern("岗位管理")})).toHaveAttribute("aria-selected", "true");
 
         await openAddJobTab(user);
-        expect(screen.getByRole("heading", {name: "Add New Job"})).toBeInTheDocument();
-        expect(screen.getByLabelText("Title")).toBeInTheDocument();
-        expect(screen.queryByLabelText(/color legend/i)).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", {name: "发布新岗位"})).toBeInTheDocument();
+        expect(screen.getByLabelText("岗位名称")).toBeInTheDocument();
+        expect(screen.queryByLabelText(/状态图例/)).not.toBeInTheDocument();
 
         await openApplicationsTab(user);
-        expect(screen.getByRole("heading", {name: "Applied (1)"})).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Applicant: user"))).toBeInTheDocument();
-        expect(screen.getByLabelText("Applications color legend")).toHaveTextContent("Applied");
-        expect(screen.getByLabelText("Applications color legend")).toHaveTextContent("Reviewing");
-        expect(screen.getByLabelText("Applications color legend")).toHaveTextContent("Accepted");
-        expect(screen.getByLabelText("Applications color legend")).toHaveTextContent("Rejected");
-        expect(screen.getByLabelText("Applications color legend")).toHaveTextContent("Withdrawn");
+        expect(screen.getByRole("heading", {name: "已投递 (1)"})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("求职者：user"))).toBeInTheDocument();
+        expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("已投递");
+        expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("筛选中");
+        expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("已录用");
+        expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("未通过");
+        expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("已撤回");
     });
 
     it("should show admin users as read-only and applicant users as enable-disable only", async () => {
@@ -240,19 +240,19 @@ describe("AdminDashboard", () => {
 
         await openUsersTab(user);
 
-        expect(screen.getByText("Admins are read-only here. Applicant users can be enabled or disabled.")).toBeInTheDocument();
-        expect(screen.getByText("Enabled users can log in and use the portal. Disabled users cannot log in and active sessions are ended.")).toBeInTheDocument();
-        expect(screen.queryByRole("heading", {name: "Create Applicant"})).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument();
-        expect(screen.getByLabelText("Users color legend")).toHaveTextContent("Enabled");
-        expect(screen.getByLabelText("Users color legend")).toHaveTextContent("Disabled");
+        expect(screen.getByText("管理员账号仅支持查看；求职者账号可以启用或停用。")).toBeInTheDocument();
+        expect(screen.getByText("停用账号后，用户将无法登录，已有登录状态也会立即失效。")).toBeInTheDocument();
+        expect(screen.queryByRole("heading", {name: "创建求职者"})).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", {name: "编辑"})).not.toBeInTheDocument();
+        expect(screen.getByLabelText("用户状态图例")).toHaveTextContent("已启用");
+        expect(screen.getByLabelText("用户状态图例")).toHaveTextContent("已停用");
         const adminCard = screen.getByText(byTextContent("admin")).closest(".user-card");
-        expect(within(adminCard).getByText("Admin users are read-only here.")).toBeInTheDocument();
-        expect(within(adminCard).getByRole("button", {name: "Disable"})).toBeDisabled();
+        expect(within(adminCard).getByText("管理员账号仅支持查看。")).toBeInTheDocument();
+        expect(within(adminCard).getByRole("button", {name: "停用账号"})).toBeDisabled();
 
         const applicantCard = screen.getByText(byTextContent("Rod Oliveira")).closest(".user-card");
-        expect(within(applicantCard).getByText(byTextContent("Role: Applicant"))).toBeInTheDocument();
-        expect(within(applicantCard).getByRole("button", {name: "Disable"})).toBeEnabled();
+        expect(within(applicantCard).getByText(byTextContent("角色：求职者"))).toBeInTheDocument();
+        expect(within(applicantCard).getByRole("button", {name: "停用账号"})).toBeEnabled();
     });
 
     it("should search and filter users without hiding the controls", async () => {
@@ -291,9 +291,9 @@ describe("AdminDashboard", () => {
 
         await openUsersTab(user);
 
-        const searchInput = screen.getByLabelText("Search Users");
-        const roleFilter = screen.getByLabelText("User Role");
-        const statusFilter = screen.getByLabelText("User Status");
+        const searchInput = screen.getByLabelText("搜索用户");
+        const roleFilter = screen.getByLabelText("用户角色");
+        const statusFilter = screen.getByLabelText("账号状态");
 
         await user.type(searchInput, "alice");
         expect(screen.getByText(byTextContent("Alice Smith"))).toBeInTheDocument();
@@ -318,10 +318,10 @@ describe("AdminDashboard", () => {
         await user.selectOptions(roleFilter, "ALL");
         await user.selectOptions(statusFilter, "ALL");
         await user.type(searchInput, "not-a-real-user");
-        expect(screen.getByText("No users match the current filters.")).toBeInTheDocument();
-        expect(screen.getByLabelText("Search Users")).toBeInTheDocument();
-        expect(screen.getByLabelText("User Role")).toBeInTheDocument();
-        expect(screen.getByLabelText("User Status")).toBeInTheDocument();
+        expect(screen.getByText("没有符合当前筛选条件的用户。")).toBeInTheDocument();
+        expect(screen.getByLabelText("搜索用户")).toBeInTheDocument();
+        expect(screen.getByLabelText("用户角色")).toBeInTheDocument();
+        expect(screen.getByLabelText("账号状态")).toBeInTheDocument();
     });
 
     it("should disable applicant users from the users tab", async () => {
@@ -354,10 +354,10 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openUsersTab(user);
-        await user.click(screen.getByRole("button", {name: "Disable"}));
-        const dialog = screen.getByRole("dialog", {name: "Disable Rod Oliveira?"});
-        expect(within(dialog).getByText("This user will be signed out and will not be able to log in.")).toBeInTheDocument();
-        await user.click(within(dialog).getByRole("button", {name: "Disable User"}));
+        await user.click(screen.getByRole("button", {name: "停用账号"}));
+        const dialog = screen.getByRole("dialog", {name: "确认停用 Rod Oliveira？"});
+        expect(within(dialog).getByText("停用后，该用户将立即退出登录，且无法再次登录。")).toBeInTheDocument();
+        await user.click(within(dialog).getByRole("button", {name: "确认停用"}));
         await waitFor(() => expect(axios.put).toHaveBeenCalledWith(
             "http://localhost:8080/api/users/admin/applicants/2/enabled",
             {enabled: false},
@@ -367,9 +367,9 @@ describe("AdminDashboard", () => {
                 }
             }
         ));
-        expect(await screen.findByText("User Rod Oliveira was disabled successfully.")).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Status: Disabled"))).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Enable"})).toBeInTheDocument();
+        expect(await screen.findByText("Rod Oliveira 的账号已停用。")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("账号状态：已停用"))).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "启用账号"})).toBeInTheDocument();
     });
 
     it("should not disable applicant users when confirmation is canceled", async () => {
@@ -393,20 +393,20 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openUsersTab(user);
-        const disableButton = screen.getByRole("button", {name: "Disable"});
+        const disableButton = screen.getByRole("button", {name: "停用账号"});
         await user.click(disableButton);
-        const dialog = screen.getByRole("dialog", {name: "Disable Rod Oliveira?"});
-        expect(within(dialog).getByText("This user will be signed out and will not be able to log in.")).toBeInTheDocument();
-        const cancelButton = within(dialog).getByRole("button", {name: "Cancel"});
+        const dialog = screen.getByRole("dialog", {name: "确认停用 Rod Oliveira？"});
+        expect(within(dialog).getByText("停用后，该用户将立即退出登录，且无法再次登录。")).toBeInTheDocument();
+        const cancelButton = within(dialog).getByRole("button", {name: "取消"});
         expect(cancelButton).toHaveFocus();
         expect(document.body.style.overflow).toBe("hidden");
         await user.click(cancelButton);
 
         expect(axios.put).not.toHaveBeenCalled();
-        expect(screen.queryByRole("dialog", {name: "Disable Rod Oliveira?"})).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog", {name: "确认停用 Rod Oliveira？"})).not.toBeInTheDocument();
         await waitFor(() => expect(disableButton).toHaveFocus());
         expect(document.body.style.overflow).toBe("");
-        expect(screen.getByText(byTextContent("Status: Enabled"))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("账号状态：已启用"))).toBeInTheDocument();
     });
 
     it("should close the disable user modal with Escape and restore focus", async () => {
@@ -430,17 +430,17 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openUsersTab(user);
-        const disableButton = screen.getByRole("button", {name: "Disable"});
+        const disableButton = screen.getByRole("button", {name: "停用账号"});
         await user.click(disableButton);
 
-        const dialog = screen.getByRole("dialog", {name: "Disable Rod Oliveira?"});
-        expect(within(dialog).getByRole("button", {name: "Cancel"})).toHaveFocus();
+        const dialog = screen.getByRole("dialog", {name: "确认停用 Rod Oliveira？"});
+        expect(within(dialog).getByRole("button", {name: "取消"})).toHaveFocus();
         expect(document.body.style.overflow).toBe("hidden");
 
         await user.keyboard("{Escape}");
 
         expect(axios.put).not.toHaveBeenCalled();
-        expect(screen.queryByRole("dialog", {name: "Disable Rod Oliveira?"})).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog", {name: "确认停用 Rod Oliveira？"})).not.toBeInTheDocument();
         await waitFor(() => expect(disableButton).toHaveFocus());
         expect(document.body.style.overflow).toBe("");
     });
@@ -475,7 +475,7 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openUsersTab(user);
-        await user.click(screen.getByRole("button", {name: "Enable"}));
+        await user.click(screen.getByRole("button", {name: "启用账号"}));
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await waitFor(() => expect(axios.put).toHaveBeenCalledWith(
@@ -487,8 +487,8 @@ describe("AdminDashboard", () => {
                 }
             }
         ));
-        expect(await screen.findByText("User Rod Oliveira was enabled successfully.")).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Status: Enabled"))).toBeInTheDocument();
+        expect(await screen.findByText("Rod Oliveira 的账号已启用。")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("账号状态：已启用"))).toBeInTheDocument();
     });
 
     it("should show the posted date with time when a timestamp is available", async () => {
@@ -513,7 +513,7 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
 
         const expectedDateTime = jobDateTimeFormatter.format(new Date(createdAt));
-        await waitFor(() => expect(screen.getByText(byTextContent(`Posted Date: ${expectedDateTime}`))).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText(byTextContent(`发布时间：${expectedDateTime}`))).toBeInTheDocument());
     });
 
     it("should send create job request with bearer token and prepend the new job", async () => {
@@ -536,10 +536,10 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openAddJobTab(user);
-        await user.type(screen.getByLabelText("Title"), "Platform Engineer");
-        await user.type(screen.getByLabelText("Company"), "ACME");
-        await user.type(screen.getByLabelText("Description"), "Own internal services");
-        await user.click(screen.getByRole("button", {name: "Create Job"}));
+        await user.type(screen.getByLabelText("岗位名称"), "Platform Engineer");
+        await user.type(screen.getByLabelText("公司名称"), "ACME");
+        await user.type(screen.getByLabelText("岗位描述"), "Own internal services");
+        await user.click(screen.getByRole("button", {name: "发布岗位"}));
 
         await waitFor(() =>
             expect(axios.post).toHaveBeenCalledWith(
@@ -557,9 +557,9 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Job created successfully.")).toBeInTheDocument();
+        expect(await screen.findByText("岗位发布成功。")).toBeInTheDocument();
         expect(screen.getByText(byTextContent("Platform Engineer"))).toBeInTheDocument();
-        expect(screen.getByRole("tab", {name: tabNamePattern("Jobs")})).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByRole("tab", {name: tabNamePattern("岗位管理")})).toHaveAttribute("aria-selected", "true");
     });
 
     it("should enter edit mode and send update request with bearer token", async () => {
@@ -592,19 +592,19 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Edit"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Edit"}));
-        expect(screen.getByRole("tab", {name: "Add Job"})).toHaveAttribute("aria-selected", "true");
+        await waitFor(() => expect(screen.getByRole("button", {name: "编辑"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "编辑"}));
+        expect(screen.getByRole("tab", {name: "发布岗位"})).toHaveAttribute("aria-selected", "true");
 
-        const titleInput = screen.getByLabelText("Title");
+        const titleInput = screen.getByLabelText("岗位名称");
         await user.clear(titleInput);
         await user.type(titleInput, "Senior Java Developer");
 
-        const descriptionInput = screen.getByLabelText("Description");
+        const descriptionInput = screen.getByLabelText("岗位描述");
         await user.clear(descriptionInput);
         await user.type(descriptionInput, "Build platform APIs");
 
-        await user.click(screen.getByRole("button", {name: "Save Changes"}));
+        await user.click(screen.getByRole("button", {name: "保存修改"}));
 
         await waitFor(() =>
             expect(axios.put).toHaveBeenCalledWith(
@@ -622,9 +622,9 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Job updated successfully.")).toBeInTheDocument();
+        expect(await screen.findByText("岗位信息已更新。")).toBeInTheDocument();
         expect(screen.getByText(byTextContent("Senior Java Developer"))).toBeInTheDocument();
-        expect(screen.getByRole("tab", {name: tabNamePattern("Jobs")})).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByRole("tab", {name: tabNamePattern("岗位管理")})).toHaveAttribute("aria-selected", "true");
     });
 
     it("should return to the jobs tab when canceling edit mode", async () => {
@@ -647,14 +647,14 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Edit"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Edit"}));
-        expect(screen.getByRole("tab", {name: "Add Job"})).toHaveAttribute("aria-selected", "true");
+        await waitFor(() => expect(screen.getByRole("button", {name: "编辑"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "编辑"}));
+        expect(screen.getByRole("tab", {name: "发布岗位"})).toHaveAttribute("aria-selected", "true");
 
-        await user.click(screen.getByRole("button", {name: "Cancel Edit"}));
+        await user.click(screen.getByRole("button", {name: "取消编辑"}));
 
-        expect(screen.getByRole("tab", {name: tabNamePattern("Jobs")})).toHaveAttribute("aria-selected", "true");
-        expect(screen.queryByRole("button", {name: "Cancel Edit"})).not.toBeInTheDocument();
+        expect(screen.getByRole("tab", {name: tabNamePattern("岗位管理")})).toHaveAttribute("aria-selected", "true");
+        expect(screen.queryByRole("button", {name: "取消编辑"})).not.toBeInTheDocument();
         expect(screen.getByText(byTextContent("Java Developer"))).toBeInTheDocument();
     });
 
@@ -676,12 +676,12 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openAddJobTab(user);
-        await user.type(screen.getByLabelText("Title"), " ");
-        await user.type(screen.getByLabelText("Company"), "ACME");
-        await user.type(screen.getByLabelText("Description"), "Own internal services");
-        await user.click(screen.getByRole("button", {name: "Create Job"}));
+        await user.type(screen.getByLabelText("岗位名称"), " ");
+        await user.type(screen.getByLabelText("公司名称"), "ACME");
+        await user.type(screen.getByLabelText("岗位描述"), "Own internal services");
+        await user.click(screen.getByRole("button", {name: "发布岗位"}));
 
-        expect(await screen.findByText("Title is required")).toBeInTheDocument();
+        expect(await screen.findByText("请输入岗位名称。")).toBeInTheDocument();
     });
 
     it("should show backend validation message when update fails with bad request", async () => {
@@ -712,11 +712,11 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Edit"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Edit"}));
-        await user.click(screen.getByRole("button", {name: "Save Changes"}));
+        await waitFor(() => expect(screen.getByRole("button", {name: "编辑"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "编辑"}));
+        await user.click(screen.getByRole("button", {name: "保存修改"}));
 
-        expect(await screen.findByText("Description must be at most 2000 characters")).toBeInTheDocument();
+        expect(await screen.findByText("岗位描述不能超过 2000 个字符。")).toBeInTheDocument();
     });
 
     it("should delete a job after confirmation", async () => {
@@ -741,8 +741,8 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Delete"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Delete"}));
+        await waitFor(() => expect(screen.getByRole("button", {name: "删除"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "删除"}));
 
         await waitFor(() =>
             expect(axios.delete).toHaveBeenCalledWith(
@@ -755,7 +755,7 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Job deleted successfully.")).toBeInTheDocument();
+        expect(await screen.findByText("岗位已删除。")).toBeInTheDocument();
         expect(screen.queryByText(byTextContent("Java Developer"))).not.toBeInTheDocument();
     });
 
@@ -788,10 +788,10 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Delete"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Delete"}));
+        await waitFor(() => expect(screen.getByRole("button", {name: "删除"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "删除"}));
 
-        expect(await screen.findByText("Cannot delete job with existing applications")).toBeInTheDocument();
+        expect(await screen.findByText("已有投递记录的岗位不能删除，请先关闭岗位。")).toBeInTheDocument();
         expect(screen.getByText(byTextContent("Java Developer"))).toBeInTheDocument();
     });
 
@@ -836,8 +836,8 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Close"}));
+        await waitFor(() => expect(screen.getByRole("button", {name: "关闭岗位"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "关闭岗位"}));
 
         await waitFor(() =>
             expect(axios.put).toHaveBeenCalledWith(
@@ -854,14 +854,14 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Job closed successfully.")).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Status: Closed"))).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Reopen"})).toBeInTheDocument();
+        expect(await screen.findByText("岗位已关闭。")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("岗位状态：已关闭"))).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "重新开放"})).toBeInTheDocument();
 
         const closedCard = screen.getByText(byTextContent("Java Developer")).closest(".job-card");
         expect(closedCard).toHaveClass("job-card-closed");
 
-        await user.click(screen.getByRole("button", {name: "Reopen"}));
+        await user.click(screen.getByRole("button", {name: "重新开放"}));
 
         await waitFor(() =>
             expect(axios.put).toHaveBeenCalledWith(
@@ -878,9 +878,9 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Job reopened successfully.")).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Status: Open"))).toBeInTheDocument();
-        expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+        expect(await screen.findByText("岗位已重新开放。")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("岗位状态：招聘中"))).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "关闭岗位"})).toBeInTheDocument();
         const reopenedCard = screen.getByText(byTextContent("Java Developer")).closest(".job-card");
         expect(reopenedCard).toHaveClass("job-card-open");
     });
@@ -913,8 +913,8 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByLabelText("Job Status")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Job Status"), "CLOSED");
+        await waitFor(() => expect(screen.getByLabelText("岗位状态")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("岗位状态"), "CLOSED");
 
         expect(screen.getByText(byTextContent("QA Engineer"))).toBeInTheDocument();
         expect(screen.queryByText(byTextContent("Java Developer"))).not.toBeInTheDocument();
@@ -948,8 +948,8 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByLabelText("Search Jobs")).toBeInTheDocument());
-        await user.type(screen.getByLabelText("Search Jobs"), "glob");
+        await waitFor(() => expect(screen.getByLabelText("搜索岗位")).toBeInTheDocument());
+        await user.type(screen.getByLabelText("搜索岗位"), "glob");
 
         expect(screen.getByText(byTextContent("QA Engineer"))).toBeInTheDocument();
         expect(screen.queryByText(byTextContent("Java Developer"))).not.toBeInTheDocument();
@@ -983,8 +983,8 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByLabelText("Job Sort")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Job Sort"), "oldest");
+        await waitFor(() => expect(screen.getByLabelText("岗位排序")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("岗位排序"), "oldest");
 
         const headings = screen.getAllByRole("heading", {level: 4}).map((element) => element.textContent);
         expect(headings[0]).toBe("Older Job");
@@ -1011,10 +1011,10 @@ describe("AdminDashboard", () => {
         renderWithProviders(<AdminDashboard/>);
         const user = userEvent.setup();
 
-        await waitFor(() => expect(screen.getByLabelText("Search Jobs")).toBeInTheDocument());
-        await user.type(screen.getByLabelText("Search Jobs"), "does-not-match");
+        await waitFor(() => expect(screen.getByLabelText("搜索岗位")).toBeInTheDocument());
+        await user.type(screen.getByLabelText("搜索岗位"), "does-not-match");
 
-        expect(screen.getByText("No jobs match the current filters.")).toBeInTheDocument();
+        expect(screen.getByText("没有符合当前筛选条件的岗位。")).toBeInTheDocument();
         expect(screen.queryByText(byTextContent("Java Developer"))).not.toBeInTheDocument();
     });
 
@@ -1059,9 +1059,9 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Status")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Status"), "REVIEWING");
-        await user.click(screen.getByRole("button", {name: "Save"}));
+        await waitFor(() => expect(screen.getByLabelText("调整状态")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("调整状态"), "REVIEWING");
+        await user.click(screen.getByRole("button", {name: "保存"}));
 
         await waitFor(() =>
             expect(axios.put).toHaveBeenCalledWith(
@@ -1078,10 +1078,10 @@ describe("AdminDashboard", () => {
             )
         );
 
-        expect(await screen.findByText("Application status updated successfully.")).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Current Status: Reviewing"))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent(`Applied On: ${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
-        expect(screen.getByText(byTextContent(`Last Updated: ${applicationDateTimeFormatter.format(new Date(updatedAt))}`))).toBeInTheDocument();
+        expect(await screen.findByText("投递状态已更新。")).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("当前状态：筛选中"))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent(`投递时间：${applicationDateTimeFormatter.format(new Date(createdAt))}`))).toBeInTheDocument();
+        expect(screen.getByText(byTextContent(`更新时间：${applicationDateTimeFormatter.format(new Date(updatedAt))}`))).toBeInTheDocument();
     });
 
     it("should filter applications by status", async () => {
@@ -1111,12 +1111,12 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Filter by Status")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Filter by Status"), "REVIEWING");
+        await waitFor(() => expect(screen.getByLabelText("投递状态")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("投递状态"), "REVIEWING");
 
-        expect(screen.getByRole("heading", {name: "Reviewing (1)"})).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Applicant: bob"))).toBeInTheDocument();
-        expect(screen.queryByText(byTextContent("Applicant: alice"))).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", {name: "筛选中 (1)"})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("求职者：bob"))).toBeInTheDocument();
+        expect(screen.queryByText(byTextContent("求职者：alice"))).not.toBeInTheDocument();
     });
 
     it("should filter applications by search term", async () => {
@@ -1146,12 +1146,12 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Search Applications")).toBeInTheDocument());
-        await user.type(screen.getByLabelText("Search Applications"), "qa");
+        await waitFor(() => expect(screen.getByLabelText("搜索投递记录")).toBeInTheDocument());
+        await user.type(screen.getByLabelText("搜索投递记录"), "qa");
 
-        expect(screen.getByRole("heading", {name: "Reviewing (1)"})).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Applicant: bob"))).toBeInTheDocument();
-        expect(screen.queryByText(byTextContent("Applicant: alice"))).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", {name: "筛选中 (1)"})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("求职者：bob"))).toBeInTheDocument();
+        expect(screen.queryByText(byTextContent("求职者：alice"))).not.toBeInTheDocument();
     });
 
     it("should keep application search controls visible when no results match", async () => {
@@ -1174,15 +1174,15 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Search Applications")).toBeInTheDocument());
-        await user.type(screen.getByLabelText("Search Applications"), "nonexistent-user");
+        await waitFor(() => expect(screen.getByLabelText("搜索投递记录")).toBeInTheDocument());
+        await user.type(screen.getByLabelText("搜索投递记录"), "nonexistent-user");
 
-        expect(screen.getByText("No applications match the current filters.")).toBeInTheDocument();
-        expect(screen.getByLabelText("Search Applications")).toBeInTheDocument();
-        expect(screen.getByLabelText("Filter by Status")).toBeInTheDocument();
+        expect(screen.getByText("没有符合当前筛选条件的投递记录。")).toBeInTheDocument();
+        expect(screen.getByLabelText("搜索投递记录")).toBeInTheDocument();
+        expect(screen.getByLabelText("投递状态")).toBeInTheDocument();
 
-        await user.clear(screen.getByLabelText("Search Applications"));
-        expect(screen.getByText(byTextContent("Applicant: alice"))).toBeInTheDocument();
+        await user.clear(screen.getByLabelText("搜索投递记录"));
+        expect(screen.getByText(byTextContent("求职者：alice"))).toBeInTheDocument();
     });
 
     it("should group applications by status with counts", async () => {
@@ -1212,11 +1212,11 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByRole("heading", {name: "Reviewing (1)"})).toBeInTheDocument());
-        expect(screen.getByRole("heading", {name: "Applied (1)"})).toBeInTheDocument();
-        expect(screen.getByRole("heading", {name: "Reviewing (1)"})).toBeInTheDocument();
-        const appliedCard = screen.getByText(byTextContent("Applicant: alice")).closest(".application-card");
-        const reviewingCard = screen.getByText(byTextContent("Applicant: bob")).closest(".application-card");
+        await waitFor(() => expect(screen.getByRole("heading", {name: "筛选中 (1)"})).toBeInTheDocument());
+        expect(screen.getByRole("heading", {name: "已投递 (1)"})).toBeInTheDocument();
+        expect(screen.getByRole("heading", {name: "筛选中 (1)"})).toBeInTheDocument();
+        const appliedCard = screen.getByText(byTextContent("求职者：alice")).closest(".application-card");
+        const reviewingCard = screen.getByText(byTextContent("求职者：bob")).closest(".application-card");
         expect(appliedCard).toHaveClass("application-card-applied");
         expect(reviewingCard).toHaveClass("application-card-reviewing");
     });
@@ -1246,10 +1246,10 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByRole("button", {name: "Collapse Applied"})).toBeInTheDocument());
-        expect(screen.getByRole("button", {name: "Expand Accepted"})).toBeInTheDocument();
-        expect(screen.getByText(byTextContent("Applicant: alice"))).toBeInTheDocument();
-        expect(screen.queryByText(byTextContent("Applicant: bob"))).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByRole("button", {name: "收起已投递"})).toBeInTheDocument());
+        expect(screen.getByRole("button", {name: "展开已录用"})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent("求职者：alice"))).toBeInTheDocument();
+        expect(screen.queryByText(byTextContent("求职者：bob"))).not.toBeInTheDocument();
     });
 
     it("should collapse and expand a status group", async () => {
@@ -1271,11 +1271,11 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByRole("button", {name: "Collapse Applied"})).toBeInTheDocument());
-        await user.click(screen.getByRole("button", {name: "Collapse Applied"}));
-        expect(screen.queryByText(byTextContent("Applicant: alice"))).not.toBeInTheDocument();
-        await user.click(screen.getByRole("button", {name: "Expand Applied"}));
-        expect(screen.getByText(byTextContent("Applicant: alice"))).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByRole("button", {name: "收起已投递"})).toBeInTheDocument());
+        await user.click(screen.getByRole("button", {name: "收起已投递"}));
+        expect(screen.queryByText(byTextContent("求职者：alice"))).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", {name: "展开已投递"}));
+        expect(screen.getByText(byTextContent("求职者：alice"))).toBeInTheDocument();
     });
 
     it("should move an updated application into the correct status group", async () => {
@@ -1305,14 +1305,14 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Status")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Status"), "REVIEWING");
-        await user.click(screen.getByRole("button", {name: "Save"}));
+        await waitFor(() => expect(screen.getByLabelText("调整状态")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("调整状态"), "REVIEWING");
+        await user.click(screen.getByRole("button", {name: "保存"}));
 
-        expect(await screen.findByText("Application status updated successfully.")).toBeInTheDocument();
-        expect(screen.queryByRole("heading", {name: "Applied (1)"})).not.toBeInTheDocument();
+        expect(await screen.findByText("投递状态已更新。")).toBeInTheDocument();
+        expect(screen.queryByRole("heading", {name: "已投递 (1)"})).not.toBeInTheDocument();
         const reviewingGroup = screen.getByTestId("application-group-reviewing");
-        expect(within(reviewingGroup).getByText(byTextContent("Applicant: user"))).toBeInTheDocument();
+        expect(within(reviewingGroup).getByText(byTextContent("求职者：user"))).toBeInTheDocument();
     });
 
     it("should sort applications within groups by oldest first", async () => {
@@ -1342,12 +1342,12 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Sort By")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Sort By"), "oldest");
+        await waitFor(() => expect(screen.getByLabelText("投递排序")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("投递排序"), "oldest");
 
         const headings = screen.getAllByRole("heading", {level: 4});
-        expect(headings[0]).toHaveTextContent("Applicant: bob");
-        expect(headings[1]).toHaveTextContent("Applicant: alice");
+        expect(headings[0]).toHaveTextContent("求职者：bob");
+        expect(headings[1]).toHaveTextContent("求职者：alice");
     });
 
     it("should sort jobs and applications correctly with MySQL-style timestamps", async () => {
@@ -1396,18 +1396,18 @@ describe("AdminDashboard", () => {
         const user = userEvent.setup();
 
         await waitFor(() => expect(screen.getByText(byTextContent("Newer Job"))).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Job Sort"), "oldest");
+        await user.selectOptions(screen.getByLabelText("岗位排序"), "oldest");
 
         let headings = screen.getAllByRole("heading", {level: 4}).map((element) => element.textContent);
         expect(headings[0]).toBe("Older Job");
         expect(headings[1]).toBe("Newer Job");
 
         await openApplicationsTab(user);
-        await waitFor(() => expect(screen.getByLabelText("Sort By")).toBeInTheDocument());
-        await user.selectOptions(screen.getByLabelText("Sort By"), "oldest");
+        await waitFor(() => expect(screen.getByLabelText("投递排序")).toBeInTheDocument());
+        await user.selectOptions(screen.getByLabelText("投递排序"), "oldest");
 
         headings = screen.getAllByRole("heading", {level: 4}).map((element) => element.textContent);
-        expect(headings[0]).toContain("Applicant: bob");
-        expect(headings[1]).toContain("Applicant: alice");
+        expect(headings[0]).toContain("求职者：bob");
+        expect(headings[1]).toContain("求职者：alice");
     });
 });

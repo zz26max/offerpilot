@@ -30,12 +30,12 @@ describe('Login', () => {
         const {store} = renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        expect(screen.getByText('Use your account email, for example admin@local.test or user@local.test.')).toBeInTheDocument();
-        expect(screen.getByRole('link', {name: 'Create one'})).toHaveAttribute('href', '/register');
+        expect(screen.getByText('可使用演示账号：admin@local.test 或 user@local.test。')).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: '立即注册'})).toHaveAttribute('href', '/register');
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
         await waitFor(() =>
             expect(axios.post).toHaveBeenCalledWith(
@@ -71,11 +71,11 @@ describe('Login', () => {
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'bad');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'bad');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('邮箱或密码错误。');
     });
 
     it('should show an inline error when the account is disabled', async () => {
@@ -91,11 +91,11 @@ describe('Login', () => {
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Your account is disabled. Please contact an administrator.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('账号已停用，请联系管理员。');
     });
 
     it('should show a session message from navigation state', async () => {
@@ -104,12 +104,12 @@ describe('Login', () => {
             initialEntries: [{
                 pathname: '/',
                 state: {
-                    sessionMessage: 'Your account is disabled. Please contact an administrator.'
+                    sessionMessage: '账号已停用，请联系管理员。'
                 }
             }]
         });
 
-        expect(screen.getByRole('status')).toHaveTextContent('Your account is disabled. Please contact an administrator.');
+        expect(screen.getByRole('status')).toHaveTextContent('账号已停用，请联系管理员。');
     });
 
 
@@ -126,11 +126,11 @@ describe('Login', () => {
         const {store} = renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('登录失败，请检查邮箱和密码后重试。');
         expect(mockNavigate).not.toHaveBeenCalled();
         expect(localStorage.getItem('token')).toBeNull();
         expect(store.getState().user).toEqual({
@@ -147,11 +147,11 @@ describe('Login', () => {
         const {store} = renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.type(screen.getByLabelText('Email'), 'alice@example.com');
-        await user.type(screen.getByLabelText('Password'), 'secret');
-        await user.click(screen.getByRole('button', {name: 'Login'}));
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
+        expect(await screen.findByRole('alert')).toHaveTextContent('登录失败，请检查邮箱和密码后重试。');
         expect(mockNavigate).not.toHaveBeenCalled();
         expect(store.getState().user).toEqual({
             username: '',
@@ -164,7 +164,7 @@ describe('Login', () => {
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        await user.click(screen.getByRole('button', {name: 'Sign in with Google'}));
+        await user.click(screen.getByRole('button', {name: '使用 Google 登录'}));
 
         expect(window.location.href).toContain('/oauth2/authorization/google');
     });

@@ -6,13 +6,14 @@ import {useDispatch} from "react-redux";
 import {setUserDetails} from "../store/userActions";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {BACKEND_API_URL} from '../config/backend'
+import {localizeApiMessage} from "../i18n/messages";
 
 const getLoginErrorMessage = (error) => {
     if (error?.response?.status === 401 && error.response.data?.message) {
-        return error.response.data.message;
+        return localizeApiMessage(error.response.data.message, "邮箱或密码错误。");
     }
 
-    return "Invalid email or password.";
+    return "登录失败，请检查邮箱和密码后重试。";
 };
 
 /**
@@ -92,7 +93,7 @@ const Login = () => {
                         <div className="card login-panel p-4">
                             {/* Header */}
                             <div className="card-header login-header text-center">
-                                <h3 className="mb-0 login-title">Login to Job Portal</h3>
+                                <h3 className="mb-0 login-title">登录 OfferPilot</h3>
                             </div>
 
                             {/* Form */}
@@ -118,31 +119,31 @@ const Login = () => {
                                 }}>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="login-account-name">
-                                            Email
+                                            邮箱
                                         </label>
                                         <input
                                             id="login-account-name"
                                             type="email"
                                             className="form-control"
-                                            placeholder="Email"
+                                            placeholder="请输入邮箱"
                                             autoComplete="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             required
                                         />
                                         <div className="form-text body-text">
-                                            Use your account email, for example admin@local.test or user@local.test.
+                                            可使用演示账号：admin@local.test 或 user@local.test。
                                         </div>
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="login-password">
-                                            Password
+                                            密码
                                         </label>
                                         <input
                                             id="login-password"
                                             type="password"
                                             className="form-control"
-                                            placeholder="Password"
+                                            placeholder="请输入密码"
                                             autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
@@ -150,16 +151,16 @@ const Login = () => {
                                         />
                                     </div>
                                     <div className="text-center">
-                                        <button type="submit" className="btn btn-accent-tertiary w-75">Login</button>
+                                        <button type="submit" className="btn btn-accent-tertiary w-75">登录</button>
                                     </div>
                                 </form>
                                 <hr/>
-                                <h6 className="text-center body-text">Or</h6>
+                                <h6 className="text-center body-text">或</h6>
                                 <div className="text-center mt-3">
                                     <button
                                         onClick={() => window.location.href = `${BACKEND_API_URL}/oauth2/authorization/google`}
                                         className="btn btn-accent-primary w-75">
-                                        Sign in with Google
+                                        使用 Google 登录
                                     </button>
 
                                 </div>
@@ -167,7 +168,7 @@ const Login = () => {
 
                             {/* Footer */}
                             <div className="card-footer login-footer text-center">
-                                <small>Don't have an account? <Link to="/register">Create one</Link></small>
+                                <small>还没有账号？<Link to="/register">立即注册</Link></small>
                             </div>
                         </div>
                     </div>

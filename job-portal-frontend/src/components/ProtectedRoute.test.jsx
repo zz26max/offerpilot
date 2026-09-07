@@ -101,7 +101,7 @@ describe("ProtectedRoute", () => {
         const {store} = renderProtectedRoute();
 
         expect(await screen.findByText("Login Screen")).toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("Your account is disabled. Please contact an administrator.");
+        expect(screen.getByRole("status")).toHaveTextContent("账号已停用，请联系管理员。");
         expect(localStorage.getItem("token")).toBeNull();
         expect(store.getState().user).toEqual({
             username: "",
