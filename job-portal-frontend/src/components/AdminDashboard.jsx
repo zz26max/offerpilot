@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import {BACKEND_API_URL} from "../config/backend";
@@ -156,6 +156,13 @@ const parseSortableTimestamp = (timestamp) => {
 
 const getUserLabel = (user) => user?.name || user?.email;
 
+const buildStatusSelections = (items) => {
+    return items.reduce((lookup, application) => {
+        lookup[application.id] = application.status;
+        return lookup;
+    }, {});
+};
+
 /**
  * AdminDashboard component serves as the main administrative interface.
  * It allows admins to manage job postings and view/update job applications.
@@ -192,10 +199,6 @@ const AdminDashboard = () => {
     const disableReturnFocusRef = useRef(null);
 
     useEffect(() => {
-        loadAdminData();
-    }, []);
-
-    useEffect(() => {
         if (!pendingDisableUser) {
             return undefined;
         }
@@ -218,14 +221,7 @@ const AdminDashboard = () => {
         };
     }, [pendingDisableUser]);
 
-    const buildStatusSelections = (items) => {
-        return items.reduce((lookup, application) => {
-            lookup[application.id] = application.status;
-            return lookup;
-        }, {});
-    };
-
-    const loadAdminData = async () => {
+    const loadAdminData = useCallback(async () => {
         try {
             const requestConfig = {
                 headers: {
@@ -247,7 +243,11 @@ const AdminDashboard = () => {
             }
             setErrorMessage("We couldn't load admin data right now. Please refresh and try again.");
         }
-    };
+    }, [handleSessionTimeout]);
+
+    useEffect(() => {
+        loadAdminData();
+    }, [loadAdminData]);
 
     const getApplicationCount = (jobId) => applications.filter((application) => application?.job?.id === jobId).length;
     const openJobsCount = jobs.filter((job) => job.status === "OPEN").length;

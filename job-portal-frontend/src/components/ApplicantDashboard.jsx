@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
 import {BACKEND_API_URL} from '../config/backend'
@@ -147,6 +147,16 @@ const canWithdraw = (application) => application?.status === "APPLIED";
  */
 const canApply = (application) => !application || application.status === "WITHDRAWN";
 
+const buildApplicationsLookup = (applications) => {
+    return applications.reduce((lookup, application) => {
+        const jobId = application?.job?.id;
+        if (jobId != null) {
+            lookup[jobId] = application;
+        }
+        return lookup;
+    }, {});
+};
+
 /**
  * Returns the appropriate button label for a job action.
  *
@@ -188,21 +198,7 @@ const ApplicantDashboard = () => {
     const [statusMessage, setStatusMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
-    useEffect(() => {
-        loadApplicantData();
-    }, []);
-
-    const buildApplicationsLookup = (applications) => {
-        return applications.reduce((lookup, application) => {
-            const jobId = application?.job?.id;
-            if (jobId != null) {
-                lookup[jobId] = application;
-            }
-            return lookup;
-        }, {});
-    };
-
-    const loadApplicantData = async () => {
+    const loadApplicantData = useCallback(async () => {
         try {
             const [jobsResponse, applicationsResponse] = await Promise.all([
                 axios.get(BACKEND_API_URL + "/api/jobs"),
@@ -220,7 +216,11 @@ const ApplicantDashboard = () => {
             }
             setErrorMessage("We couldn't load your jobs and applications right now. Please refresh and try again.");
         }
-    };
+    }, [handleSessionTimeout]);
+
+    useEffect(() => {
+        loadApplicantData();
+    }, [loadApplicantData]);
 
     const apply = async (jobId) => {
         const application = getJobApplication(applicationsByJobId, jobId);
