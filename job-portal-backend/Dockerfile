@@ -2,13 +2,11 @@
 FROM maven:3.9.11-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Copy the pom.xml and download dependencies
+# Keep project inputs in separate layers while reusing Maven artifacts across rebuilds.
 COPY pom.xml .
-RUN mvn dependency:go-offline
-
-# Copy the source code and build the application
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN --mount=type=cache,id=offerpilot-maven,target=/root/.m2,sharing=locked \
+    mvn --batch-mode --no-transfer-progress -Dmaven.test.skip=true package
 
 # Stage 2: Run the application
 FROM eclipse-temurin:21-jre-alpine
