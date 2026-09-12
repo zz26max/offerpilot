@@ -1,6 +1,9 @@
 package net.jrodolfo.jobportal.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import net.jrodolfo.jobportal.observability.JobCacheMetricsBinder;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.annotation.CachingConfigurer;
@@ -14,10 +17,16 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
+    private final MeterRegistry meterRegistry;
+
+    public CacheConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     @Bean
     @Override
     public CacheErrorHandler errorHandler() {
-        return new FailOpenCacheErrorHandler();
+        return new FailOpenCacheErrorHandler(meterRegistry);
     }
 
     /**
@@ -25,6 +34,13 @@ public class CacheConfig implements CachingConfigurer {
      */
     @Bean
     public RedisCacheManagerBuilderCustomizer transactionAwareRedisCacheManager() {
-        return builder -> builder.transactionAware();
+        return builder -> builder
+                .enableStatistics()
+                .transactionAware();
+    }
+
+    @Bean
+    public JobCacheMetricsBinder jobCacheMetricsBinder(CacheManager cacheManager) {
+        return new JobCacheMetricsBinder(cacheManager);
     }
 }

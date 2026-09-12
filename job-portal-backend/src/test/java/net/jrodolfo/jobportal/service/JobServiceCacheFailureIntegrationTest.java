@@ -1,5 +1,7 @@
 package net.jrodolfo.jobportal.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import net.jrodolfo.jobportal.config.CacheConfig;
 import net.jrodolfo.jobportal.config.JobCacheNames;
 import net.jrodolfo.jobportal.constant.JobStatus;
@@ -93,6 +95,11 @@ class JobServiceCacheFailureIntegrationTest {
         @Bean
         CacheManager cacheManager() {
             return new FailingCacheManager();
+        }
+
+        @Bean
+        MeterRegistry meterRegistry() {
+            return new SimpleMeterRegistry();
         }
     }
 

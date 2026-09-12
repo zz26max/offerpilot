@@ -54,6 +54,18 @@ logging:
             sql:
               BasicBinder: TRACE
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
 # JWT Secret Key - should be at least 256 bits for HS256
 jwt:
   secret: ${JWT_SECRET_KEY:MY_SECRET_KEY_123456789012345678901234567890}

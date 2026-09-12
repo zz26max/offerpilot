@@ -58,7 +58,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-enter-the-client-secret-here}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-MY_SECRET_KEY_123456789012345678901234567890}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-job-portal-backend}
-      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.0.1-SNAPSHOT,deployment.environment=local}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.2.0,deployment.environment=local}
       OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
       OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
       OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}

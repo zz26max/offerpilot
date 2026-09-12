@@ -5,7 +5,7 @@ services:
       - otel-collector
     environment:
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-job-portal-backend}
-      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.0.1-SNAPSHOT,deployment.environment=prod}
+      OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.2.0,deployment.environment=prod}
       OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
       OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
       OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}
