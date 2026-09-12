@@ -1,6 +1,22 @@
 spring:
   application:
     name: jobportal
+  cache:
+    type: redis
+    cache-names: jobs-open,jobs-all,job-by-id
+    redis:
+      time-to-live: ${CACHE_TTL:5m}
+      key-prefix: ${CACHE_KEY_PREFIX:offerpilot::}
+      use-key-prefix: true
+      cache-null-values: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:500ms}
+      timeout: ${REDIS_COMMAND_TIMEOUT:500ms}
+      repositories:
+        enabled: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/jobportal?createDatabaseIfNotExist=true}
     username: ${SPRING_DATASOURCE_USERNAME:jobuser}

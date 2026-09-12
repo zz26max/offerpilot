@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import net.jrodolfo.jobportal.constant.JobStatus;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -31,7 +33,10 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @Schema(description = "Job posting.")
-public class Job {
+public class Job implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * The unique identifier for the job.

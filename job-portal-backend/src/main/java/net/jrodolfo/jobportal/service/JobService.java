@@ -1,11 +1,15 @@
 package net.jrodolfo.jobportal.service;
 
 import net.jrodolfo.jobportal.constant.JobStatus;
+import net.jrodolfo.jobportal.config.JobCacheNames;
 import net.jrodolfo.jobportal.exception.ResourceException;
 import net.jrodolfo.jobportal.model.Job;
 import net.jrodolfo.jobportal.repository.ApplicationRepository;
 import net.jrodolfo.jobportal.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,11 @@ public class JobService {
      * @param job the {@link Job} entity to create
      * @return the saved {@link Job}
      */
+    @Caching(evict = {
+            @CacheEvict(cacheNames = JobCacheNames.OPEN_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.ALL_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.JOB_BY_ID, key = "#result.id")
+    })
     public Job createJob(Job job) {
         job.setStatus(JobStatus.OPEN);
         return jobRepository.save(job); // save(T) method from JPA Repository
@@ -42,6 +51,7 @@ public class JobService {
      *
      * @return a list of open {@link Job} entities
      */
+    @Cacheable(cacheNames = JobCacheNames.OPEN_JOBS, key = "'all'")
     public List<Job> getOpenJobs() {
         return jobRepository.findByStatusOrderByCreatedAtDesc(JobStatus.OPEN);
     }
@@ -51,6 +61,7 @@ public class JobService {
      *
      * @return a list of all {@link Job} entities
      */
+    @Cacheable(cacheNames = JobCacheNames.ALL_JOBS, key = "'all'")
     public List<Job> getAllJobs() {
         return jobRepository.findAll(); // findAll() method from JPA Repository
     }
@@ -62,6 +73,7 @@ public class JobService {
      * @return the {@link Job} if found
      * @throws ResourceException if the job is not found
      */
+    @Cacheable(cacheNames = JobCacheNames.JOB_BY_ID, key = "#id")
     public Job getJobById(Long id) {
         return jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceException("Job with id " + id + " was not found"));
@@ -76,6 +88,11 @@ public class JobService {
      * @throws ResourceException if the job is not found
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = JobCacheNames.OPEN_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.ALL_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.JOB_BY_ID, key = "#id")
+    })
     public Job updateJob(Long id, Job incomingJob) {
         Job existingJob = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceException("Job with id " + id + " was not found"));
@@ -99,6 +116,11 @@ public class JobService {
      * @throws ResourceException if the job is not found
      */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = JobCacheNames.OPEN_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.ALL_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.JOB_BY_ID, key = "#id")
+    })
     public Job updateJobStatus(Long id, JobStatus status) {
         Job existingJob = jobRepository.findById(id)
                 .orElseThrow(() -> new ResourceException("Job with id " + id + " was not found"));
@@ -114,6 +136,11 @@ public class JobService {
      * @throws ResourceException       if the job is not found
      * @throws ResponseStatusException if the job has existing applications
      */
+    @Caching(evict = {
+            @CacheEvict(cacheNames = JobCacheNames.OPEN_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.ALL_JOBS, allEntries = true),
+            @CacheEvict(cacheNames = JobCacheNames.JOB_BY_ID, key = "#id")
+    })
     public void deleteJob(Long id) {
         if (!jobRepository.existsById(id)) {
             throw new ResourceException("Job with id " + id + " was not found");
