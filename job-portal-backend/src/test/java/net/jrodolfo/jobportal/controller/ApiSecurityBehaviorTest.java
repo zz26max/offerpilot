@@ -2,6 +2,7 @@ package net.jrodolfo.jobportal.controller;
 
 import net.jrodolfo.jobportal.config.FailOpenCacheErrorHandler;
 import net.jrodolfo.jobportal.config.JobCacheNames;
+import net.jrodolfo.jobportal.observability.JobCacheMetricsBinder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -11,8 +12,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.cache.Cache;
 import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.CacheManager;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,6 +42,12 @@ class ApiSecurityBehaviorTest {
     @Autowired
     private CacheErrorHandler cacheErrorHandler;
 
+    @Autowired
+    private CacheManager cacheManager;
+
+    @Autowired
+    private JobCacheMetricsBinder jobCacheMetricsBinder;
+
     @Test
     void createJobWithoutAuthenticationShouldReturnUnauthorizedInsteadOfRedirectingToOauth() throws Exception {
         mockMvc.perform(post("/api/jobs"))
@@ -59,6 +68,12 @@ class ApiSecurityBehaviorTest {
         mockMvc.perform(get("/api/users/admin"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Location"));
+    }
+
+    @Test
+    void cacheNoneTestContextStartsAndMetricsBinderRemainsSafe() {
+        assertNotNull(cacheManager);
+        assertNotNull(jobCacheMetricsBinder);
     }
 
     @Test

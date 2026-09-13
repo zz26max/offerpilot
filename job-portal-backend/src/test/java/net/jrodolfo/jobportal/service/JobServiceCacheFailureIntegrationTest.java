@@ -6,6 +6,7 @@ import net.jrodolfo.jobportal.config.CacheConfig;
 import net.jrodolfo.jobportal.config.JobCacheNames;
 import net.jrodolfo.jobportal.constant.JobStatus;
 import net.jrodolfo.jobportal.model.Job;
+import net.jrodolfo.jobportal.observability.JobRepositoryLoadMetrics;
 import net.jrodolfo.jobportal.repository.ApplicationRepository;
 import net.jrodolfo.jobportal.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig(classes = {
         JobService.class,
+        JobRepositoryLoadMetrics.class,
         CacheConfig.class,
         JobServiceCacheFailureIntegrationTest.TestConfig.class
 })

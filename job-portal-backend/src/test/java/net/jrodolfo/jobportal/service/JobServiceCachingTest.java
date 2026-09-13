@@ -6,6 +6,7 @@ import net.jrodolfo.jobportal.config.CacheConfig;
 import net.jrodolfo.jobportal.config.JobCacheNames;
 import net.jrodolfo.jobportal.constant.JobStatus;
 import net.jrodolfo.jobportal.model.Job;
+import net.jrodolfo.jobportal.observability.JobRepositoryLoadMetrics;
 import net.jrodolfo.jobportal.repository.ApplicationRepository;
 import net.jrodolfo.jobportal.repository.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 @SpringJUnitConfig(classes = {
         JobService.class,
+        JobRepositoryLoadMetrics.class,
         CacheConfig.class,
         JobServiceCachingTest.TestConfig.class
 })
@@ -47,6 +50,9 @@ class JobServiceCachingTest {
     @Autowired
     private CacheManager cacheManager;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @BeforeEach
     void resetState() {
         reset(jobRepository, applicationRepository);
@@ -57,11 +63,13 @@ class JobServiceCachingTest {
     void openJobsAreServedFromCacheAfterFirstRepositoryCall() {
         List<Job> jobs = List.of(job(1L, "Java Developer"));
         when(jobRepository.findByStatusOrderByCreatedAtDesc(JobStatus.OPEN)).thenReturn(jobs);
+        double loadsBefore = openJobsRepositoryLoads();
 
         assertSame(jobs, jobService.getOpenJobs());
         assertSame(jobs, jobService.getOpenJobs());
 
         verify(jobRepository, times(1)).findByStatusOrderByCreatedAtDesc(JobStatus.OPEN);
+        assertEquals(1.0, openJobsRepositoryLoads() - loadsBefore);
     }
 
     @Test
@@ -181,6 +189,13 @@ class JobServiceCachingTest {
         Job job = new Job(title, "Description", "ACME");
         job.setId(id);
         return job;
+    }
+
+    private double openJobsRepositoryLoads() {
+        return meterRegistry.get(JobRepositoryLoadMetrics.METRIC_NAME)
+                .tag("query", JobRepositoryLoadMetrics.OPEN_JOBS_QUERY)
+                .counter()
+                .count();
     }
 
     @Configuration(proxyBeanMethods = false)

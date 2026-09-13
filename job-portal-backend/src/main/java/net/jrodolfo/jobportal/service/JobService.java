@@ -4,6 +4,7 @@ import net.jrodolfo.jobportal.constant.JobStatus;
 import net.jrodolfo.jobportal.config.JobCacheNames;
 import net.jrodolfo.jobportal.exception.ResourceException;
 import net.jrodolfo.jobportal.model.Job;
+import net.jrodolfo.jobportal.observability.JobRepositoryLoadMetrics;
 import net.jrodolfo.jobportal.repository.ApplicationRepository;
 import net.jrodolfo.jobportal.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class JobService {
     @Autowired
     private ApplicationRepository applicationRepository;
 
+    @Autowired
+    private JobRepositoryLoadMetrics repositoryLoadMetrics;
+
     /**
      * Creates a new job listing and sets its initial status to {@link JobStatus#OPEN}.
      *
@@ -53,6 +57,7 @@ public class JobService {
      */
     @Cacheable(cacheNames = JobCacheNames.OPEN_JOBS, key = "'all'")
     public List<Job> getOpenJobs() {
+        repositoryLoadMetrics.recordOpenJobsLoad();
         return jobRepository.findByStatusOrderByCreatedAtDesc(JobStatus.OPEN);
     }
 

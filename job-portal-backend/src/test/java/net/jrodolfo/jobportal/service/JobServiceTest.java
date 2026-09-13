@@ -2,6 +2,7 @@ package net.jrodolfo.jobportal.service;
 
 import net.jrodolfo.jobportal.constant.JobStatus;
 import net.jrodolfo.jobportal.model.Job;
+import net.jrodolfo.jobportal.observability.JobRepositoryLoadMetrics;
 import net.jrodolfo.jobportal.repository.ApplicationRepository;
 import net.jrodolfo.jobportal.repository.JobRepository;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class JobServiceTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
+    @Mock
+    private JobRepositoryLoadMetrics repositoryLoadMetrics;
+
     @InjectMocks
     private JobService jobService;
 
@@ -63,6 +67,7 @@ class JobServiceTest {
 
         assertEquals(2, result.size());
         assertSame(jobs, result);
+        verify(repositoryLoadMetrics).recordOpenJobsLoad();
     }
 
     @Test
