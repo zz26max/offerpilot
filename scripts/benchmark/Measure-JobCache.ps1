@@ -11,6 +11,10 @@ param(
     [int]$WarmupRequests = 10,
     [ValidateRange(1, 1000000)]
     [int]$MinimumJobCount = 1,
+    [ValidateRange(0, 10000)]
+    [int]$FixtureJobCount = 0,
+    [ValidateRange(96, 2000)]
+    [int]$FixtureDescriptionLength = 256,
     [string]$AdminUsername = "admin@local.test",
     [string]$AdminPassword = "admin123",
     [string]$RedisService = "redis",
@@ -92,6 +96,96 @@ function Invoke-TimedJobGet {
     }
     finally {
         $response.Dispose()
+    }
+}
+
+function Get-PublicJobFingerprint {
+    $sample = Invoke-TimedJobGet -Client $httpClient -Uri $jobsUri
+    return [pscustomobject]@{
+        Sha256 = $sample.Sha256
+        JobCount = $sample.JobCount
+    }
+}
+
+function New-FixtureDescription {
+    param([string]$RunMarker, [int]$Index, [int]$Length)
+
+    $prefix = "$RunMarker fixture $Index "
+    if ($prefix.Length -gt $Length) {
+        throw "FixtureDescriptionLength=$Length is too short for the run marker."
+    }
+    return $prefix + [string]::Empty.PadRight($Length - $prefix.Length, [char]'x')
+}
+
+function Add-FixtureJobs {
+    param(
+        [int]$Count,
+        [string]$RunMarker,
+        [System.Collections.Generic.List[long]]$CapturedIds
+    )
+
+    for ($index = 1; $index -le $Count; $index++) {
+        $payload = [ordered]@{
+            title = "$RunMarker-$index"
+            description = New-FixtureDescription `
+                -RunMarker $RunMarker `
+                -Index $index `
+                -Length $FixtureDescriptionLength
+            company = "OfferPilot benchmark fixture"
+        }
+        $json = ConvertTo-Json -InputObject $payload -Compress
+        $content = [System.Net.Http.StringContent]::new(
+            $json,
+            [Text.Encoding]::UTF8,
+            "application/json"
+        )
+        try {
+            $response = $adminClient.PostAsync($jobsUri, $content).GetAwaiter().GetResult()
+            try {
+                $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+                if ([int]$response.StatusCode -ne 201) {
+                    throw "Fixture creation $index/$Count returned HTTP $([int]$response.StatusCode)."
+                }
+                $created = ConvertFrom-Json -InputObject $body
+                $createdId = [long]$created.id
+                if ($createdId -lt 1) {
+                    throw "Fixture creation $index/$Count returned an invalid job id."
+                }
+                $CapturedIds.Add($createdId)
+            }
+            finally {
+                $response.Dispose()
+            }
+        }
+        finally {
+            $content.Dispose()
+        }
+    }
+}
+
+function Remove-FixtureJobs {
+    param([System.Collections.Generic.List[long]]$CapturedIds)
+
+    $failures = [System.Collections.Generic.List[string]]::new()
+    foreach ($createdId in $CapturedIds) {
+        $deleteUri = [Uri]("{0}/{1}" -f $jobsUri.AbsoluteUri.TrimEnd('/'), $createdId)
+        try {
+            $response = $adminClient.DeleteAsync($deleteUri).GetAwaiter().GetResult()
+            try {
+                if ([int]$response.StatusCode -ne 204) {
+                    $failures.Add("job id $createdId returned HTTP $([int]$response.StatusCode)")
+                }
+            }
+            finally {
+                $response.Dispose()
+            }
+        }
+        catch {
+            $failures.Add("job id $createdId failed: $($_.Exception.Message)")
+        }
+    }
+    if ($failures.Count -gt 0) {
+        throw "Fixture cleanup failures: $($failures -join '; ')."
     }
 }
 
@@ -310,7 +404,7 @@ function Remove-KnownOpenJobsCacheKey {
 }
 
 function Get-RepositoryLoadCount {
-    $response = $metricsClient.GetAsync($metricsUri).GetAwaiter().GetResult()
+    $response = $adminClient.GetAsync($metricsUri).GetAwaiter().GetResult()
     try {
         $body = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
         if (-not $response.IsSuccessStatusCode) {
@@ -413,12 +507,12 @@ $httpHandler = [System.Net.Http.HttpClientHandler]::new()
 $httpHandler.UseProxy = $UseProxy.IsPresent
 $httpClient = [System.Net.Http.HttpClient]::new($httpHandler)
 $httpClient.Timeout = [TimeSpan]::FromSeconds(30)
-$metricsHandler = [System.Net.Http.HttpClientHandler]::new()
-$metricsHandler.UseProxy = $UseProxy.IsPresent
-$metricsClient = [System.Net.Http.HttpClient]::new($metricsHandler)
-$metricsClient.Timeout = [TimeSpan]::FromSeconds(30)
+$adminHandler = [System.Net.Http.HttpClientHandler]::new()
+$adminHandler.UseProxy = $UseProxy.IsPresent
+$adminClient = [System.Net.Http.HttpClient]::new($adminHandler)
+$adminClient.Timeout = [TimeSpan]::FromSeconds(30)
 $credentialBytes = [Text.Encoding]::UTF8.GetBytes("$AdminUsername`:$AdminPassword")
-$metricsClient.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new(
+$adminClient.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new(
     "Basic",
     [Convert]::ToBase64String($credentialBytes)
 )
@@ -429,12 +523,24 @@ $originalCacheType = [Environment]::GetEnvironmentVariable("SPRING_CACHE_TYPE", 
 $enteredBackendCacheType = Get-EnteredBackendCacheType
 $measurementFailure = $null
 $restorationFailure = $null
+$cleanupFailure = $null
+$cleanupVerificationFailure = $null
 $result = $null
 $startedAt = [DateTimeOffset]::UtcNow
+$runMarker = "offerpilot-benchmark-$($startedAt.ToString("yyyyMMddHHmmss"))-$([Guid]::NewGuid().ToString("N"))"
+$fixtureIds = [System.Collections.Generic.List[long]]::new()
+$originalFingerprint = $null
+$restoredFingerprint = $null
 
 try {
     if (-not $SkipBuild.IsPresent) {
         $null = Invoke-ComposeChecked -Arguments @("build", "backend")
+    }
+
+    $originalFingerprint = Get-PublicJobFingerprint
+    if ($FixtureJobCount -gt 0) {
+        Write-Output "Fixture run marker: $runMarker"
+        Add-FixtureJobs -Count $FixtureJobCount -RunMarker $runMarker -CapturedIds $fixtureIds
     }
 
     $disabled = Invoke-Scenario -CacheType "none"
@@ -442,6 +548,10 @@ try {
     if (($disabled.response.sha256 -ne $enabled.response.sha256) -or
             ($disabled.response.jobCount -ne $enabled.response.jobCount)) {
         throw "Cache-disabled and cache-enabled responses differ in count or SHA-256."
+    }
+    $expectedMeasurementCount = $originalFingerprint.JobCount + $fixtureIds.Count
+    if ($enabled.response.jobCount -ne $expectedMeasurementCount) {
+        throw "Measured dataset contains $($enabled.response.jobCount) jobs; expected $expectedMeasurementCount after fixture creation."
     }
 
     $result = [ordered]@{
@@ -455,7 +565,17 @@ try {
             concurrency = [Math]::Min($Concurrency, $RequestsPerRound)
             warmupRequestsPerScenario = $WarmupRequests
             minimumJobCount = $MinimumJobCount
+            fixtureJobCount = $FixtureJobCount
+            fixtureDescriptionLength = $FixtureDescriptionLength
             proxyEnabled = $UseProxy.IsPresent
+        }
+        dataset = [ordered]@{
+            runMarker = $(if ($FixtureJobCount -gt 0) { $runMarker } else { $null })
+            originalJobCount = $originalFingerprint.JobCount
+            originalSha256 = $originalFingerprint.Sha256
+            fixtureJobsCreated = $fixtureIds.Count
+            measurementJobCount = $enabled.response.jobCount
+            createdJobIds = @($fixtureIds)
         }
         cacheDisabled = $disabled
         cacheEnabled = $enabled
@@ -481,26 +601,72 @@ finally {
         $restorationFailure = $_
     }
     finally {
+        try {
+            if ($fixtureIds.Count -gt 0) {
+                Remove-FixtureJobs -CapturedIds $fixtureIds
+            }
+        }
+        catch {
+            $cleanupFailure = $_
+        }
+
+        if ($null -ne $originalFingerprint) {
+            try {
+                $restoredFingerprint = Get-PublicJobFingerprint
+                if (($restoredFingerprint.JobCount -ne $originalFingerprint.JobCount) -or
+                        ($restoredFingerprint.Sha256 -ne $originalFingerprint.Sha256)) {
+                    throw "Public job list did not return to its original count and SHA-256 after fixture cleanup."
+                }
+            }
+            catch {
+                $cleanupVerificationFailure = $_
+            }
+        }
+
         Set-ProcessCacheType -CacheType $(if ($originalCacheTypeWasSet) { $originalCacheType } else { $null })
-        $metricsClient.Dispose()
-        $metricsHandler.Dispose()
+        $adminClient.Dispose()
+        $adminHandler.Dispose()
         $httpClient.Dispose()
         $httpHandler.Dispose()
     }
 }
 
-if ($null -ne $restorationFailure) {
-    throw "Benchmark restoration failed: $($restorationFailure.Exception.Message)"
+$failures = [System.Collections.Generic.List[string]]::new()
+if ($null -eq $restorationFailure) {
+    Write-Output "Backend restored with SPRING_CACHE_TYPE=$enteredBackendCacheType."
 }
-Write-Output "Backend restored with SPRING_CACHE_TYPE=$enteredBackendCacheType."
+if (($null -ne $originalFingerprint) -and
+        ($null -eq $cleanupFailure) -and
+        ($null -eq $cleanupVerificationFailure)) {
+    Write-Output "Dataset cleanup verified: $($restoredFingerprint.JobCount) original jobs restored."
+}
 if ($null -ne $measurementFailure) {
-    throw "Benchmark failed after backend restoration: $($measurementFailure.Exception.Message)"
+    $failures.Add("measurement: $($measurementFailure.Exception.Message)")
+}
+if ($null -ne $restorationFailure) {
+    $failures.Add("backend restoration: $($restorationFailure.Exception.Message)")
+}
+if ($null -ne $cleanupFailure) {
+    $failures.Add("fixture cleanup: $($cleanupFailure.Exception.Message)")
+}
+if ($null -ne $cleanupVerificationFailure) {
+    $failures.Add("cleanup verification: $($cleanupVerificationFailure.Exception.Message)")
+}
+if ($failures.Count -gt 0) {
+    throw "Benchmark failed after restoration and fixture cleanup: $($failures -join ' | ')"
 }
 
 $result["restoration"] = [ordered]@{
     originalProcessSettingPresent = $originalCacheTypeWasSet
     restoredCacheType = $enteredBackendCacheType
     backendHealthy = $true
+}
+$result.dataset["cleanup"] = [ordered]@{
+    attemptedFixtureJobIds = $fixtureIds.Count
+    fixtureJobsDeleted = $fixtureIds.Count
+    restoredJobCount = $restoredFingerprint.JobCount
+    restoredSha256 = $restoredFingerprint.Sha256
+    matchesOriginal = $true
 }
 $result["completedAtUtc"] = [DateTimeOffset]::UtcNow.ToString("o")
 
@@ -515,6 +681,7 @@ $summary.Add("OfferPilot cache-enabled vs cache-disabled benchmark")
 $summary.Add("Timestamp (UTC): $($result.timestampUtc)")
 $summary.Add("Endpoint: $($result.endpoint)")
 $summary.Add("Scope: $($result.scope)")
+$summary.Add("Dataset: $($result.dataset.originalJobCount) original + $($result.dataset.fixtureJobsCreated) fixture = $($result.dataset.measurementJobCount) measured jobs")
 foreach ($scenario in @($result.cacheDisabled, $result.cacheEnabled)) {
     $summary.Add("$($scenario.cacheType): $($scenario.total.throughputRequestsPerSecond) req/s; P50 $($scenario.total.latencyMs.p50) ms; P95 $($scenario.total.latencyMs.p95) ms; P99 $($scenario.total.latencyMs.p99) ms; repository source loads $($scenario.repositorySourceLoads.measuredDelta)")
     foreach ($round in $scenario.rounds) {
@@ -524,6 +691,7 @@ foreach ($scenario in @($result.cacheDisabled, $result.cacheEnabled)) {
 $summary.Add("Response parity: $($result.cacheEnabled.response.jobCount) jobs; SHA-256 $($result.cacheEnabled.response.sha256)")
 $summary.Add("Controlled-run changes: throughput $($result.comparisonPercent.throughputChange)%; P50 $($result.comparisonPercent.p50LatencyChange)%; P95 $($result.comparisonPercent.p95LatencyChange)%; P99 $($result.comparisonPercent.p99LatencyChange)%; repository loads $($result.comparisonPercent.repositorySourceLoadChange)%")
 $summary.Add("Restoration: backend healthy with SPRING_CACHE_TYPE=$($result.restoration.restoredCacheType)")
+$summary.Add("Cleanup: original count and SHA-256 restored = $($result.dataset.cleanup.matchesOriginal)")
 $summary.Add("JSON: $jsonPath")
 $summary | Set-Content -Path $textPath -Encoding UTF8
 $summary | Write-Output

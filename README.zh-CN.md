@@ -102,12 +102,12 @@ Redis 职位缓存启用了本进程统计。重点指标为：
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark\Measure-JobCache.ps1 `
   -Rounds 3 -RequestsPerRound 200 -Concurrency 20 -WarmupRequests 10 `
-  -MinimumJobCount 100
+  -FixtureJobCount 100 -MinimumJobCount 100
 ```
 
-脚本在同一个 backend 镜像上依次重建 cache-disabled 与 cache-enabled 场景，每个场景执行相同预热及多轮请求，记录 QPS、P50/P95/P99 和预热后的 Repository 回源次数，并校验所有响应的职位数量与 SHA-256 完全一致。Redis 场景只删除公开岗位列表对应的一个已知键；脚本结束或失败时都会恢复进入前 backend 的实际缓存模式，并保持进程环境变量原本的设置/未设置状态。
+脚本可通过现有管理员 API 创建仅属于本次唯一 marker 的临时 OPEN 职位，在同一个 backend 镜像上依次重建 cache-disabled 与 cache-enabled 场景，每个场景执行相同预热及多轮请求，记录 QPS、P50/P95/P99 和预热后的 Repository 回源次数，并校验所有响应的职位数量与 SHA-256 完全一致。Redis 场景只删除公开职位列表对应的一个已知键；脚本结束或失败时都会恢复进入前 backend 的实际缓存模式，只按捕获的具体 ID 清理本次 fixture，并验证原始职位 count/SHA 已恢复。
 
-正式记录结果前应先准备稳定数据集，并用 `-MinimumJobCount` 设置与数据集相符的最低数量；示例中的 100 不是通用标准。输出百分比只适用于本次同机、本地、特定数据量和参数的受控实验，不代表生产容量或 SLA。参数、凭据处理、任务清理、恢复保证与解释边界详见 [职位缓存对照基准说明](./docs/performance/README.zh-CN.md)。
+正式记录结果时必须保持 `SPRING_JPA_SHOW_SQL=false`；示例中的 100 不是通用标准。输出百分比只适用于本次同机、本地、特定数据量和参数的受控实验，不代表生产容量或 SLA。强制终止进程仍可能绕过 `finally`，人工残留检查、参数、凭据处理、任务清理与恢复边界详见 [职位缓存对照基准说明](./docs/performance/README.zh-CN.md)。
 
 ## v0.2.0 范围说明
 

@@ -23,7 +23,7 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:jobpass}
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
