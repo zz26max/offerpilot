@@ -19,6 +19,9 @@ spring:
   sql:
     init:
       mode: never
+resume:
+  storage:
+    root: ${java.io.tmpdir}/offerpilot-test-resumes-${random.uuid}
 logging:
   level:
     org.hibernate.SQL: DEBUG

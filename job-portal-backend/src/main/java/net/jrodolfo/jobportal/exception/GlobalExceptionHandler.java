@@ -8,7 +8,10 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -24,6 +27,37 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ResumeValidationException.class)
+    public ResponseEntity<ErrorResponse> handleResumeValidationException(ResumeValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), System.currentTimeMillis()));
+    }
+
+    @ExceptionHandler({ResumeTooLargeException.class, MaxUploadSizeExceededException.class})
+    public ResponseEntity<ErrorResponse> handleResumeTooLargeException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(new ErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                        "Resume file must not exceed 5 MiB",
+                        System.currentTimeMillis()));
+    }
+
+    @ExceptionHandler(ResumeStorageException.class)
+    public ResponseEntity<ErrorResponse> handleResumeStorageException(ResumeStorageException ex) {
+        log.error("Resume storage error while processing request", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "Resume storage is temporarily unavailable",
+                        System.currentTimeMillis()));
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
+    public ResponseEntity<ErrorResponse> handleMultipartException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
+                        "A resume file is required",
+                        System.currentTimeMillis()));
+    }
 
     /**
      * Handles {@link ResourceException}, typically thrown when a requested resource is not found.

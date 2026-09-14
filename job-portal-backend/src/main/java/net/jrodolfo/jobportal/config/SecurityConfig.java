@@ -109,6 +109,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/resumes/**").hasRole("APPLICANT")
                         .requestMatchers(HttpMethod.POST, "/api/applications/**").hasRole("APPLICANT")
                         .requestMatchers(HttpMethod.GET, "/api/applications/**").hasAnyRole("APPLICANT", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/applications/**").hasAnyRole("APPLICANT", "ADMIN")
@@ -173,7 +174,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

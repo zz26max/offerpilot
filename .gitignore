@@ -39,6 +39,7 @@ job-portal-backend/target/
 job-portal-backend/!.mvn/wrapper/maven-wrapper.jar
 job-portal-backend/!**/src/main/**/target/
 job-portal-backend/!**/src/test/**/target/
+job-portal-backend/data/
 
 ### IntelliJ IDEA ###
 job-portal-backend/.idea

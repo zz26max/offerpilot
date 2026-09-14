@@ -1,6 +1,10 @@
 spring:
   application:
     name: jobportal
+  servlet:
+    multipart:
+      max-file-size: ${RESUME_MAX_FILE_SIZE:5MB}
+      max-request-size: ${RESUME_MAX_REQUEST_SIZE:6MB}
   cache:
     type: redis
     cache-names: jobs-open,jobs-all,job-by-id
@@ -69,6 +73,10 @@ management:
 # JWT Secret Key - should be at least 256 bits for HS256
 jwt:
   secret: ${JWT_SECRET_KEY:MY_SECRET_KEY_123456789012345678901234567890}
+
+resume:
+  storage:
+    root: ${RESUME_STORAGE_ROOT:./data/resumes}
 
 springdoc:
   api-docs:

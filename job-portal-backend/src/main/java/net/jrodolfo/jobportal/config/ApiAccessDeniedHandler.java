@@ -34,6 +34,7 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
                        AccessDeniedException accessDeniedException) throws IOException, ServletException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write("{\"message\":\"You do not have permission to access this API resource.\"}");
+        response.getWriter().write("{\"status\":403,\"message\":\"You do not have permission to access this API resource.\""
+                + ",\"timestamp\":" + System.currentTimeMillis() + "}");
     }
 }

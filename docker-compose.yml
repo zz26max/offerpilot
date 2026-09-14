@@ -59,6 +59,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-enter-the-client-id-here}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-enter-the-client-secret-here}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-MY_SECRET_KEY_123456789012345678901234567890}
+      RESUME_STORAGE_ROOT: /app/data/resumes
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-job-portal-backend}
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.2.0,deployment.environment=local}
       OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
@@ -71,6 +72,8 @@ services:
       OTEL_PROPAGATORS: ${OTEL_PROPAGATORS:-tracecontext,baggage}
     ports:
       - "8080:8080"
+    volumes:
+      - resume-data:/app/data/resumes
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.120.0
@@ -110,3 +113,4 @@ services:
 
 volumes:
   mysql-data:
+  resume-data:

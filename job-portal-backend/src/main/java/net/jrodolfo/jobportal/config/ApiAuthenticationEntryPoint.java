@@ -35,7 +35,8 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException, ServletException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write("{\"message\":\"" + getMessage(authException) + "\"}");
+        response.getWriter().write("{\"status\":401,\"message\":\"" + getMessage(authException)
+                + "\",\"timestamp\":" + System.currentTimeMillis() + "}");
     }
 
     private String getMessage(AuthenticationException authException) {
