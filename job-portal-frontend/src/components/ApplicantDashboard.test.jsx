@@ -61,6 +61,42 @@ describe('ApplicantDashboard', () => {
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-not-applied');
     });
 
+    it('defaults to job opportunities and preserves loaded jobs across tab switches', async () => {
+        axios.get
+            .mockResolvedValueOnce({
+                data: [{
+                    id: 1,
+                    title: 'Java Developer',
+                    description: 'Build APIs',
+                    company: 'ACME',
+                    postedDate: '2026-01-01'
+                }]
+            })
+            .mockResolvedValueOnce({data: []})
+            .mockResolvedValueOnce({data: []});
+        renderWithProviders(<ApplicantDashboard/>);
+        const user = userEvent.setup();
+
+        const jobsTab = screen.getByRole('tab', {name: '岗位机会'});
+        const resumesTab = screen.getByRole('tab', {name: '我的简历'});
+        expect(jobsTab).toHaveAttribute('aria-selected', 'true');
+        expect(resumesTab).toHaveAttribute('aria-selected', 'false');
+        expect(await screen.findByText(byTextContent('Java Developer'))).toBeVisible();
+
+        await user.click(resumesTab);
+        expect(resumesTab).toHaveAttribute('aria-selected', 'true');
+        expect(await screen.findByRole('heading', {name: '我的简历'})).toBeInTheDocument();
+        expect(screen.getByText(byTextContent('Java Developer'))).not.toBeVisible();
+        expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/resumes', {
+            headers: {Authorization: 'Bearer jwt-123'}
+        });
+
+        await user.click(jobsTab);
+        expect(screen.getByText(byTextContent('Java Developer'))).toBeVisible();
+        expect(axios.get.mock.calls.filter(([url]) => url.endsWith('/api/jobs'))).toHaveLength(1);
+        expect(axios.get.mock.calls.filter(([url]) => url.endsWith('/api/applications'))).toHaveLength(1);
+    });
+
     it('should clear the session when application loading returns unauthorized', async () => {
         axios.get
             .mockResolvedValueOnce({data: []})

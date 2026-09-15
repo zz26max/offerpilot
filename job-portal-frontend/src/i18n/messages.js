@@ -6,6 +6,11 @@ const statusLabels = {
     ACCEPTED: "已录用",
     REJECTED: "未通过",
     WITHDRAWN: "已撤回",
+    UPLOADED: "历史记录",
+    QUEUED: "等待解析",
+    PROCESSING: "解析中",
+    SUCCEEDED: "解析完成",
+    FAILED: "解析失败",
     ADMIN: "管理员",
     APPLICANT: "求职者",
     ROLE_ADMIN: "管理员",
@@ -39,7 +44,11 @@ const apiMessageTranslations = {
     "User email already exists": "该邮箱已注册。",
     "Enabled is required": "请选择账号状态。",
     "Invalid request": "提交内容有误，请检查后重试。",
-    "Request failed": "请求失败，请稍后重试。"
+    "Request failed": "请求失败，请稍后重试。",
+    "Only valid PDF or DOCX resume files are allowed": "仅支持内容有效的 PDF 或 DOCX 简历。",
+    "Resume file must not exceed 5 MiB": "简历文件不能超过 5 MiB。",
+    "Resume file must not be empty": "简历文件不能为空。",
+    "Resume storage is temporarily unavailable": "简历存储暂时不可用，请稍后重试。"
 };
 
 const apiMessagePatterns = [

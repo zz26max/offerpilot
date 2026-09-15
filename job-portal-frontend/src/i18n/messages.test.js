@@ -5,6 +5,8 @@ describe("中文界面文案", () => {
         expect(formatStatus("OPEN")).toBe("招聘中");
         expect(formatStatus("REVIEWING")).toBe("筛选中");
         expect(formatStatus("ROLE_ADMIN")).toBe("管理员");
+        expect(formatStatus("QUEUED")).toBe("等待解析");
+        expect(formatStatus("SUCCEEDED")).toBe("解析完成");
     });
 
     it("允许调用方指定空状态文案", () => {
