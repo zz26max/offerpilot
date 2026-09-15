@@ -36,6 +36,19 @@ spring:
   flyway:
     baseline-on-migrate: true
     baseline-version: 0
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:jobuser}
+    password: ${RABBITMQ_PASSWORD:jobpass}
+    connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:3s}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        default-requeue-rejected: false
   # Google OAuth2 Configuration (use environment variables for production)
   security:
     oauth2:
@@ -77,6 +90,24 @@ jwt:
 resume:
   storage:
     root: ${RESUME_STORAGE_ROOT:./data/resumes}
+  processing:
+    publisher:
+      enabled: ${RESUME_OUTBOX_PUBLISHER_ENABLED:true}
+      poll-interval: ${RESUME_OUTBOX_POLL_INTERVAL:1s}
+      batch-size: ${RESUME_OUTBOX_BATCH_SIZE:20}
+      claim-lease: ${RESUME_OUTBOX_CLAIM_LEASE:30s}
+      confirm-timeout: ${RESUME_PUBLISH_CONFIRM_TIMEOUT:5s}
+      initial-backoff: ${RESUME_OUTBOX_INITIAL_BACKOFF:1s}
+      max-backoff: ${RESUME_OUTBOX_MAX_BACKOFF:1m}
+    listener:
+      enabled: ${RESUME_LISTENER_ENABLED:true}
+    consumer:
+      max-attempts: ${RESUME_PARSE_MAX_ATTEMPTS:3}
+      initial-backoff: ${RESUME_PARSE_INITIAL_BACKOFF:500ms}
+      max-backoff: ${RESUME_PARSE_MAX_BACKOFF:5s}
+      backoff-multiplier: ${RESUME_PARSE_BACKOFF_MULTIPLIER:2.0}
+    extractor:
+      max-characters: ${RESUME_TEXT_MAX_CHARACTERS:100000}
 
 springdoc:
   api-docs:

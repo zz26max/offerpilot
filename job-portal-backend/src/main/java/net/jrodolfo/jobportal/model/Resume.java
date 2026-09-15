@@ -15,6 +15,11 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.jrodolfo.jobportal.constant.ResumeParseStatus;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 import java.time.LocalDateTime;
 
@@ -50,6 +55,26 @@ public class Resume {
 
     @Column(nullable = false, length = 64)
     private String sha256;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "parse_status", nullable = false, length = 32)
+    private ResumeParseStatus parseStatus = ResumeParseStatus.UPLOADED;
+
+    @Column(name = "parse_attempts", nullable = false)
+    private int parseAttempts;
+
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "extracted_text", length = 100_000)
+    private String extractedText;
+
+    @Column(name = "error_code", length = 64)
+    private String errorCode;
+
+    @Column(name = "error_summary", length = 255)
+    private String errorSummary;
+
+    @Column(name = "parsed_at")
+    private LocalDateTime parsedAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

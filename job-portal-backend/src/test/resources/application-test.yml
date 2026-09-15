@@ -19,10 +19,23 @@ spring:
   sql:
     init:
       mode: never
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
 resume:
   storage:
     root: ${java.io.tmpdir}/offerpilot-test-resumes-${random.uuid}
+  processing:
+    publisher:
+      enabled: false
+    listener:
+      enabled: false
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+management:
+  health:
+    rabbit:
+      enabled: false

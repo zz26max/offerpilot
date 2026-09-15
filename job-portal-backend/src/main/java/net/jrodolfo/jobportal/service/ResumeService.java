@@ -33,15 +33,18 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
     private final ResumeStorage resumeStorage;
     private final ResumeFileValidator fileValidator;
+    private final ResumeUploadPersistence uploadPersistence;
 
     public ResumeService(UserRepository userRepository,
                          ResumeRepository resumeRepository,
                          ResumeStorage resumeStorage,
-                         ResumeFileValidator fileValidator) {
+                         ResumeFileValidator fileValidator,
+                         ResumeUploadPersistence uploadPersistence) {
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
         this.resumeStorage = resumeStorage;
         this.fileValidator = fileValidator;
+        this.uploadPersistence = uploadPersistence;
     }
 
     public ResumeResponse upload(String email, MultipartFile file) {
@@ -77,7 +80,7 @@ public class ResumeService {
         );
         Resume saved;
         try {
-            saved = resumeRepository.saveAndFlush(resume);
+            saved = uploadPersistence.persistQueuedResume(resume);
         } catch (RuntimeException databaseFailure) {
             compensateStoredFile(storageKey, databaseFailure);
             throw databaseFailure;
@@ -90,6 +93,12 @@ public class ResumeService {
                 .stream()
                 .map(ResumeResponse::from)
                 .toList();
+    }
+
+    public net.jrodolfo.jobportal.dto.ResumeDetailResponse getOwn(Long id, String email) {
+        Resume resume = resumeRepository.findByIdAndUser_EmailIgnoreCase(id, email)
+                .orElseThrow(() -> new ResourceException("Resume with id " + id + " was not found"));
+        return net.jrodolfo.jobportal.dto.ResumeDetailResponse.from(resume);
     }
 
     public ResumeDownload downloadOwn(Long id, String email) {

@@ -2,7 +2,11 @@ package net.jrodolfo.jobportal.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jrodolfo.jobportal.constant.ResumeParseStatus;
+import net.jrodolfo.jobportal.model.Resume;
 import net.jrodolfo.jobportal.repository.ResumeRepository;
+import net.jrodolfo.jobportal.repository.ResumeOutboxRepository;
+import net.jrodolfo.jobportal.repository.UserRepository;
 import net.jrodolfo.jobportal.service.ResumeFileValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +23,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import static net.jrodolfo.jobportal.service.ResumeFileValidatorTest.docxBytes;
 import static org.hamcrest.Matchers.containsString;
@@ -55,10 +60,17 @@ class ResumeApiIntegrationTest {
     private ResumeRepository resumeRepository;
 
     @Autowired
+    private ResumeOutboxRepository outboxRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void deleteResumeMetadata() {
+        outboxRepository.deleteAll();
         resumeRepository.deleteAll();
     }
 
@@ -75,10 +87,42 @@ class ResumeApiIntegrationTest {
                 .andExpect(jsonPath("$.contentType").value(ResumeFileValidator.PDF_CONTENT_TYPE))
                 .andExpect(jsonPath("$.sizeBytes").value(pdf.length))
                 .andExpect(jsonPath("$.sha256").value("9e71ab1984528e0b81d8d799687fdf121592c0d1045c4d80438e0bb7691c811b"))
+                .andExpect(jsonPath("$.parseStatus").value("QUEUED"))
+                .andExpect(jsonPath("$.attempts").value(0))
                 .andExpect(jsonPath("$.storageKey").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
         JsonNode uploaded = objectMapper.readTree(responseBody);
         long resumeId = uploaded.get("id").asLong();
+        assertEquals(1, outboxRepository.count());
+
+        mockMvc.perform(get("/api/resumes/{id}", resumeId)
+                        .with(httpBasic("user@local.test", "user123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(resumeId))
+                .andExpect(jsonPath("$.parseStatus").value("QUEUED"))
+                .andExpect(jsonPath("$.extractedText").isEmpty())
+                .andExpect(jsonPath("$.storageKey").doesNotExist())
+                .andExpect(jsonPath("$.errorSummary").doesNotExist());
+
+        Resume parsed = resumeRepository.findById(resumeId).orElseThrow();
+        parsed.setParseStatus(ResumeParseStatus.SUCCEEDED);
+        parsed.setExtractedText("Normalized extracted resume text");
+        parsed.setParsedAt(LocalDateTime.now());
+        parsed.setErrorSummary("internal parser diagnostic");
+        resumeRepository.saveAndFlush(parsed);
+
+        mockMvc.perform(get("/api/resumes/{id}", resumeId)
+                        .with(httpBasic("user@local.test", "user123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.parseStatus").value("SUCCEEDED"))
+                .andExpect(jsonPath("$.extractedText").value("Normalized extracted resume text"))
+                .andExpect(jsonPath("$.parsedAt").isNotEmpty())
+                .andExpect(jsonPath("$.storageKey").doesNotExist())
+                .andExpect(jsonPath("$.errorSummary").doesNotExist());
+
+        mockMvc.perform(get("/api/resumes/{id}", resumeId)
+                        .with(user("other@applicant.test").roles("APPLICANT")))
+                .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/resumes").with(httpBasic("user@local.test", "user123")))
                 .andExpect(status().isOk())
@@ -164,7 +208,7 @@ class ResumeApiIntegrationTest {
     }
 
     @Test
-    void flywayCreatesResumeTableAndOwnerIndex() {
+    void flywayCreatesResumeParsingColumnsAndOutboxIndex() {
         Integer tableCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'RESUMES'",
                 Integer.class
@@ -173,8 +217,86 @@ class ResumeApiIntegrationTest {
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES WHERE TABLE_NAME = 'RESUMES' AND INDEX_NAME = 'IDX_RESUMES_USER_ID'",
                 Integer.class
         );
+        Integer outboxCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'RESUME_OUTBOX'",
+                Integer.class
+        );
+        Integer pendingIndexCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES WHERE TABLE_NAME = 'RESUME_OUTBOX' AND INDEX_NAME = 'IDX_RESUME_OUTBOX_PENDING'",
+                Integer.class
+        );
+        Integer parseStatusColumnCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'RESUMES' AND COLUMN_NAME = 'PARSE_STATUS'",
+                Integer.class
+        );
 
         assertEquals(1, tableCount);
         assertEquals(1, indexCount);
+        assertEquals(1, outboxCount);
+        assertEquals(1, pendingIndexCount);
+        assertEquals(1, parseStatusColumnCount);
+    }
+
+    @Test
+    void migratedResumeRowsDefaultToUploadedWithoutInventingOutboxEvents() {
+        Long ownerId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE email = ?",
+                Long.class,
+                "user@local.test"
+        );
+        jdbcTemplate.update("""
+                        INSERT INTO resumes (
+                            user_id, original_filename, storage_key, content_type,
+                            size_bytes, sha256, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP(6), CURRENT_TIMESTAMP(6))
+                        """,
+                ownerId,
+                "legacy.pdf",
+                "22222222-2222-2222-2222-222222222222.pdf",
+                ResumeFileValidator.PDF_CONTENT_TYPE,
+                12,
+                "a".repeat(64)
+        );
+
+        String status = jdbcTemplate.queryForObject(
+                "SELECT parse_status FROM resumes WHERE storage_key = ?",
+                String.class,
+                "22222222-2222-2222-2222-222222222222.pdf"
+        );
+        Integer attempts = jdbcTemplate.queryForObject(
+                "SELECT parse_attempts FROM resumes WHERE storage_key = ?",
+                Integer.class,
+                "22222222-2222-2222-2222-222222222222.pdf"
+        );
+
+        assertEquals("UPLOADED", status);
+        assertEquals(0, attempts);
+        assertEquals(0, outboxRepository.count());
+    }
+
+    @Test
+    void extractedTextMappingPersistsAndReadsTheFullConfiguredMaximum() {
+        String maximumText = "简".repeat(100_000);
+        Resume resume = new Resume(
+                userRepository.findByEmailIgnoreCase("user@local.test").orElseThrow(),
+                "maximum.pdf",
+                "33333333-3333-3333-3333-333333333333.pdf",
+                ResumeFileValidator.PDF_CONTENT_TYPE,
+                12,
+                "b".repeat(64)
+        );
+        resume.setParseStatus(ResumeParseStatus.SUCCEEDED);
+        resume.setExtractedText(maximumText);
+
+        Resume saved = resumeRepository.saveAndFlush(resume);
+        Resume reloaded = resumeRepository.findById(saved.getId()).orElseThrow();
+
+        assertEquals(100_000, reloaded.getExtractedText().length());
+        assertEquals(maximumText, reloaded.getExtractedText());
+        assertEquals(100_000, jdbcTemplate.queryForObject(
+                "SELECT CHAR_LENGTH(extracted_text) FROM resumes WHERE id = ?",
+                Integer.class,
+                saved.getId()
+        ));
     }
 }

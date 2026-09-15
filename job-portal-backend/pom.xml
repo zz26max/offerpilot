@@ -35,6 +35,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <bytebuddy.agent.version>1.15.11</bytebuddy.agent.version>
+        <tika.version>3.3.2</tika.version>
+        <!-- Tika 3.3.2 and its POI stack require the newer Commons Compress API. -->
+        <commons-compress.version>1.28.0</commons-compress.version>
     </properties>
 
     <dependencies>
@@ -115,6 +118,25 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>${tika.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+            <version>${tika.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>${commons-compress.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

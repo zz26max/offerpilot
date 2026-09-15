@@ -27,6 +27,25 @@ services:
       retries: 10
       start_period: 5s
 
+  rabbitmq:
+    image: rabbitmq:4.2-management-alpine
+    container_name: job-portal-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-jobuser}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-jobpass}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
   backend:
     build:
       context: ./job-portal-backend
@@ -60,6 +79,10 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-enter-the-client-secret-here}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-MY_SECRET_KEY_123456789012345678901234567890}
       RESUME_STORAGE_ROOT: /app/data/resumes
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-jobuser}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-jobpass}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-job-portal-backend}
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.2.0,deployment.environment=local}
       OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
@@ -114,3 +137,4 @@ services:
 volumes:
   mysql-data:
   resume-data:
+  rabbitmq-data:

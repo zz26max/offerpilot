@@ -5,7 +5,9 @@ import net.jrodolfo.jobportal.constant.Role;
 import net.jrodolfo.jobportal.exception.ResourceException;
 import net.jrodolfo.jobportal.exception.ResumeTooLargeException;
 import net.jrodolfo.jobportal.model.Resume;
+import net.jrodolfo.jobportal.model.ResumeOutboxEvent;
 import net.jrodolfo.jobportal.model.User;
+import net.jrodolfo.jobportal.repository.ResumeOutboxRepository;
 import net.jrodolfo.jobportal.repository.ResumeRepository;
 import net.jrodolfo.jobportal.repository.UserRepository;
 import net.jrodolfo.jobportal.storage.ResumeStorage;
@@ -18,6 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,13 +45,19 @@ class ResumeServiceTest {
     private ResumeRepository resumeRepository;
     @Mock
     private ResumeStorage resumeStorage;
+    @Mock
+    private ResumeUploadPersistence uploadPersistence;
+    @Mock
+    private ResumeOutboxRepository outboxRepository;
 
     private ResumeService service;
     private User owner;
 
     @BeforeEach
     void setUp() {
-        service = new ResumeService(userRepository, resumeRepository, resumeStorage, new ResumeFileValidator());
+        service = new ResumeService(
+                userRepository, resumeRepository, resumeStorage, new ResumeFileValidator(), uploadPersistence
+        );
         owner = new User("Applicant", "applicant@example.com", "password", AuthProvider.LOCAL, Role.APPLICANT);
         owner.setId(10L);
     }
@@ -56,9 +68,10 @@ class ResumeServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "C:\\fakepath\\cv.pdf", "text/plain", content);
         when(userRepository.findByEmailIgnoreCase("applicant@example.com")).thenReturn(Optional.of(owner));
         when(resumeStorage.store(content, "pdf")).thenReturn("11111111-1111-1111-1111-111111111111.pdf");
-        when(resumeRepository.saveAndFlush(any(Resume.class))).thenAnswer(invocation -> {
+        when(uploadPersistence.persistQueuedResume(any(Resume.class))).thenAnswer(invocation -> {
             Resume resume = invocation.getArgument(0);
             resume.setId(7L);
+            resume.setParseStatus(net.jrodolfo.jobportal.constant.ResumeParseStatus.QUEUED);
             resume.setCreatedAt(LocalDateTime.of(2026, 9, 14, 10, 0));
             resume.setUpdatedAt(resume.getCreatedAt());
             return resume;
@@ -67,13 +80,14 @@ class ResumeServiceTest {
         var response = service.upload("applicant@example.com", file);
 
         ArgumentCaptor<Resume> captor = ArgumentCaptor.forClass(Resume.class);
-        verify(resumeRepository).saveAndFlush(captor.capture());
+        verify(uploadPersistence).persistQueuedResume(captor.capture());
         Resume saved = captor.getValue();
         assertEquals("cv.pdf", saved.getOriginalFilename());
         assertEquals(ResumeFileValidator.PDF_CONTENT_TYPE, saved.getContentType());
         assertEquals(content.length, saved.getSizeBytes());
         assertEquals("f01894932c42e83c20cd9d9ab89ff77797e84e264133e6984ab9df2d71e7d821", saved.getSha256());
         assertEquals(7L, response.id());
+        assertEquals(net.jrodolfo.jobportal.constant.ResumeParseStatus.QUEUED, response.parseStatus());
     }
 
     @Test
@@ -83,11 +97,39 @@ class ResumeServiceTest {
         String storageKey = "11111111-1111-1111-1111-111111111111.pdf";
         when(userRepository.findByEmailIgnoreCase("applicant@example.com")).thenReturn(Optional.of(owner));
         when(resumeStorage.store(content, "pdf")).thenReturn(storageKey);
-        when(resumeRepository.saveAndFlush(any(Resume.class)))
-                .thenThrow(new DataIntegrityViolationException("database unavailable"));
+        when(resumeRepository.saveAndFlush(any(Resume.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(outboxRepository.saveAndFlush(any(ResumeOutboxEvent.class)))
+                .thenThrow(new DataIntegrityViolationException("outbox insert unavailable"));
+        ResumeUploadPersistence realPersistence = new ResumeUploadPersistence(
+                resumeRepository, outboxRepository, new NoOpTransactionManager()
+        );
+        ResumeService serviceWithRealPersistence = new ResumeService(
+                userRepository, resumeRepository, resumeStorage, new ResumeFileValidator(), realPersistence
+        );
 
         assertThrows(DataIntegrityViolationException.class,
-                () -> service.upload("applicant@example.com", file));
+                () -> serviceWithRealPersistence.upload("applicant@example.com", file));
+
+        verify(resumeStorage).delete(storageKey);
+    }
+
+    @Test
+    void removesStoredFileWhenTransactionCommitFails() {
+        byte[] content = "%PDF-1.7\nresume".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "resume.pdf", "application/pdf", content);
+        String storageKey = "11111111-1111-1111-1111-111111111111.pdf";
+        when(userRepository.findByEmailIgnoreCase("applicant@example.com")).thenReturn(Optional.of(owner));
+        when(resumeStorage.store(content, "pdf")).thenReturn(storageKey);
+        when(resumeRepository.saveAndFlush(any(Resume.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        ResumeUploadPersistence realPersistence = new ResumeUploadPersistence(
+                resumeRepository, outboxRepository, new FailingCommitTransactionManager()
+        );
+        ResumeService serviceWithRealPersistence = new ResumeService(
+                userRepository, resumeRepository, resumeStorage, new ResumeFileValidator(), realPersistence
+        );
+
+        assertThrows(TransactionSystemException.class,
+                () -> serviceWithRealPersistence.upload("applicant@example.com", file));
 
         verify(resumeStorage).delete(storageKey);
     }
@@ -99,7 +141,7 @@ class ResumeServiceTest {
         );
 
         assertThrows(ResumeTooLargeException.class, () -> service.upload("applicant@example.com", file));
-        verifyNoInteractions(userRepository, resumeRepository, resumeStorage);
+        verifyNoInteractions(userRepository, resumeRepository, resumeStorage, uploadPersistence);
     }
 
     @Test
@@ -148,5 +190,31 @@ class ResumeServiceTest {
         resume.setCreatedAt(LocalDateTime.now());
         resume.setUpdatedAt(LocalDateTime.now());
         return resume;
+    }
+
+    private static class NoOpTransactionManager extends AbstractPlatformTransactionManager {
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, TransactionDefinition definition) {
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) {
+        }
+    }
+
+    private static final class FailingCommitTransactionManager extends NoOpTransactionManager {
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+            throw new TransactionSystemException("commit failed");
+        }
     }
 }

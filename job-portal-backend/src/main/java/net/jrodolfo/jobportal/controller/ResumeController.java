@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import net.jrodolfo.jobportal.dto.ResumeDownload;
+import net.jrodolfo.jobportal.dto.ResumeDetailResponse;
 import net.jrodolfo.jobportal.dto.ResumeResponse;
 import net.jrodolfo.jobportal.exception.ErrorResponse;
 import net.jrodolfo.jobportal.service.ResumeService;
@@ -58,6 +59,13 @@ public class ResumeController {
     @Operation(summary = "List the current applicant's resume metadata")
     public List<ResumeResponse> list(Authentication authentication) {
         return resumeService.listOwn(authentication.getName());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get owner-visible resume details and extracted text")
+    @ApiResponse(responseCode = "404", description = "Resume not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResumeDetailResponse get(@PathVariable Long id, Authentication authentication) {
+        return resumeService.getOwn(id, authentication.getName());
     }
 
     @GetMapping("/{id}/content")
