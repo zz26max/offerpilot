@@ -46,6 +46,10 @@ const formatContentType = (contentType) => {
     return "其他格式";
 };
 
+const formatMatchScore = (match) => (
+    match?.comparable && Number.isFinite(match.score) ? `${match.score}%` : "不可比较"
+);
+
 const validateSelectedFiles = (files) => {
     if (!files || files.length === 0) {
         return "请选择一份简历文件。";
@@ -114,6 +118,7 @@ export {
     MAX_RESUME_SIZE_BYTES,
     formatBytes,
     formatContentType,
+    formatMatchScore,
     formatTimestamp,
     getStatusClassName,
     getStatusDescription,

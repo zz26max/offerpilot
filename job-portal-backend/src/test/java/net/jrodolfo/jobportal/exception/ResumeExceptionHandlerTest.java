@@ -31,4 +31,13 @@ class ResumeExceptionHandlerTest {
         assertEquals(413, response.getBody().getStatus());
         assertEquals("Resume file must not exceed 5 MiB", response.getBody().getMessage());
     }
+
+    @Test
+    void unavailableMatchingReturnsSafeConflictResponse() {
+        var response = handler.handleResumeMatchUnavailableException(new ResumeMatchUnavailableException());
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(409, response.getBody().getStatus());
+        assertEquals("Resume matching requires successfully parsed resume text", response.getBody().getMessage());
+    }
 }

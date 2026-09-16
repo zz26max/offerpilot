@@ -10,8 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import net.jrodolfo.jobportal.dto.ResumeDownload;
 import net.jrodolfo.jobportal.dto.ResumeDetailResponse;
 import net.jrodolfo.jobportal.dto.ResumeResponse;
+import net.jrodolfo.jobportal.dto.ResumeJobMatchesResponse;
 import net.jrodolfo.jobportal.exception.ErrorResponse;
 import net.jrodolfo.jobportal.service.ResumeService;
+import net.jrodolfo.jobportal.service.ResumeJobMatchService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -37,9 +39,11 @@ import java.util.List;
 public class ResumeController {
 
     private final ResumeService resumeService;
+    private final ResumeJobMatchService resumeJobMatchService;
 
-    public ResumeController(ResumeService resumeService) {
+    public ResumeController(ResumeService resumeService, ResumeJobMatchService resumeJobMatchService) {
         this.resumeService = resumeService;
+        this.resumeJobMatchService = resumeJobMatchService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -66,6 +70,20 @@ public class ResumeController {
     @ApiResponse(responseCode = "404", description = "Resume not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public ResumeDetailResponse get(@PathVariable Long id, Authentication authentication) {
         return resumeService.getOwn(id, authentication.getName());
+    }
+
+    @GetMapping("/{id}/matches")
+    @Operation(
+            summary = "Match one successfully parsed resume against open jobs",
+            description = "Calculates versioned technical-skill coverage using a finite rule dictionary. This is not an AI assessment."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Rule-based matches calculated"),
+            @ApiResponse(responseCode = "404", description = "Resume not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Resume text is not ready for matching", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResumeJobMatchesResponse matches(@PathVariable Long id, Authentication authentication) {
+        return resumeJobMatchService.matchOwnResume(id, authentication.getName());
     }
 
     @GetMapping("/{id}/content")

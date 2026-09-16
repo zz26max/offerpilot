@@ -13,6 +13,7 @@ import {
     safeDownloadName,
     validateSelectedFiles
 } from "./resumePanelUtils";
+import ResumeMatches from "./ResumeMatches";
 
 const ResumePanel = () => {
     const handleSessionTimeout = useSessionTimeout();
@@ -22,6 +23,7 @@ const ResumePanel = () => {
     const uploadInFlightRef = useRef(false);
     const detailRequestsInFlightRef = useRef(new Set());
     const downloadsInFlightRef = useRef(new Set());
+    const matchRequestsInFlightRef = useRef(new Set());
 
     const [resumes, setResumes] = useState([]);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -36,6 +38,10 @@ const ResumePanel = () => {
     const [detailLoading, setDetailLoading] = useState({});
     const [detailErrors, setDetailErrors] = useState({});
     const [downloading, setDownloading] = useState({});
+    const [expandedMatches, setExpandedMatches] = useState({});
+    const [matchData, setMatchData] = useState({});
+    const [matchLoading, setMatchLoading] = useState({});
+    const [matchErrors, setMatchErrors] = useState({});
 
     const authConfig = useCallback((extra = {}) => ({
         ...extra,
@@ -254,6 +260,53 @@ const ResumePanel = () => {
         }
     };
 
+    const loadMatches = async (resume) => {
+        if (matchRequestsInFlightRef.current.has(resume.id)) {
+            return;
+        }
+
+        matchRequestsInFlightRef.current.add(resume.id);
+        setMatchLoading((current) => ({...current, [resume.id]: true}));
+        setMatchErrors((current) => ({...current, [resume.id]: ""}));
+        try {
+            const response = await axios.get(
+                `${BACKEND_API_URL}/api/resumes/${resume.id}/matches`,
+                authConfig()
+            );
+            if (mountedRef.current) {
+                setMatchData((current) => ({...current, [resume.id]: response.data}));
+            }
+        } catch (error) {
+            if (!mountedRef.current || handleSessionTimeout(error)) {
+                return;
+            }
+            setMatchErrors((current) => ({
+                ...current,
+                [resume.id]: localizeApiMessage(
+                    error?.response?.data?.message,
+                    "暂时无法计算岗位匹配，请稍后重试。"
+                )
+            }));
+        } finally {
+            matchRequestsInFlightRef.current.delete(resume.id);
+            if (mountedRef.current) {
+                setMatchLoading((current) => ({...current, [resume.id]: false}));
+            }
+        }
+    };
+
+    const toggleMatches = (resume) => {
+        if (expandedMatches[resume.id]) {
+            setExpandedMatches((current) => ({...current, [resume.id]: false}));
+            return;
+        }
+
+        setExpandedMatches((current) => ({...current, [resume.id]: true}));
+        if (!matchData[resume.id]) {
+            void loadMatches(resume);
+        }
+    };
+
     const retryList = () => {
         setPollingPaused(false);
         void loadResumes();
@@ -325,6 +378,8 @@ const ResumePanel = () => {
                         const detail = expandedDetails[resume.id];
                         const isExpanded = Boolean(expandedRecords[resume.id]);
                         const detailsId = `resume-details-${resume.id}`;
+                        const areMatchesExpanded = Boolean(expandedMatches[resume.id]);
+                        const matchesId = `resume-matches-${resume.id}`;
                         return (
                             <article className="resume-record" key={resume.id}>
                                 <div className="resume-record-main">
@@ -348,16 +403,30 @@ const ResumePanel = () => {
                                 </div>
                                 <div className="resume-record-actions">
                                     {resume.parseStatus === "SUCCEEDED" ? (
-                                        <button
-                                            aria-controls={detailsId}
-                                            aria-expanded={isExpanded}
-                                            className="btn btn-sm btn-outline-secondary"
-                                            disabled={Boolean(detailLoading[resume.id])}
-                                            onClick={() => toggleDetails(resume)}
-                                            type="button"
-                                        >
-                                            {detailLoading[resume.id] ? "正在加载…" : isExpanded ? "收起解析文本" : "查看解析文本"}
-                                        </button>
+                                        <>
+                                            <button
+                                                aria-controls={detailsId}
+                                                aria-expanded={isExpanded}
+                                                className="btn btn-sm btn-outline-secondary"
+                                                disabled={Boolean(detailLoading[resume.id])}
+                                                onClick={() => toggleDetails(resume)}
+                                                type="button"
+                                            >
+                                                {detailLoading[resume.id] ? "正在加载…" : isExpanded ? "收起解析文本" : "查看解析文本"}
+                                            </button>
+                                            <button
+                                                aria-controls={matchesId}
+                                                aria-expanded={areMatchesExpanded}
+                                                className="btn btn-sm btn-outline-secondary"
+                                                disabled={Boolean(matchLoading[resume.id])}
+                                                onClick={() => toggleMatches(resume)}
+                                                type="button"
+                                            >
+                                                {matchLoading[resume.id]
+                                                    ? "正在计算…"
+                                                    : areMatchesExpanded ? "收起岗位匹配" : "查看岗位匹配"}
+                                            </button>
+                                        </>
                                     ) : null}
                                     <button
                                         className="btn btn-sm btn-accent-secondary"
@@ -386,6 +455,17 @@ const ResumePanel = () => {
                                         {!detailLoading[resume.id] && !detailErrors[resume.id] && detail?.extractedText != null ? (
                                             <pre>{detail.extractedText}</pre>
                                         ) : null}
+                                    </div>
+                                ) : null}
+                                {areMatchesExpanded ? (
+                                    <div className="resume-matches" id={matchesId}>
+                                        <ResumeMatches
+                                            data={matchData[resume.id]}
+                                            error={matchErrors[resume.id]}
+                                            isLoading={Boolean(matchLoading[resume.id])}
+                                            onRefresh={() => loadMatches(resume)}
+                                            onRetry={() => loadMatches(resume)}
+                                        />
                                     </div>
                                 ) : null}
                             </article>

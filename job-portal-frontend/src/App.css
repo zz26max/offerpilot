@@ -359,6 +359,156 @@
     padding-top: 0.85rem;
 }
 
+.resume-matches {
+    border-top: 1px solid rgba(20, 20, 19, 0.12);
+    grid-column: 1 / -1;
+    min-width: 0;
+    padding-top: 0.85rem;
+}
+
+.resume-match-heading,
+.resume-match-job-heading,
+.resume-detected-skills,
+.resume-match-skill-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.65rem;
+}
+
+.resume-match-heading,
+.resume-match-job-heading {
+    justify-content: space-between;
+}
+
+.resume-match-heading h5,
+.resume-match-job-heading h6 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    margin: 0;
+}
+
+.resume-match-heading h5 {
+    font-size: 1rem;
+}
+
+.resume-match-heading p,
+.resume-match-job-heading p,
+.resume-match-explanation,
+.resume-match-version {
+    color: #565650;
+    font-size: 0.82rem;
+    margin: 0.15rem 0 0;
+    overflow-wrap: anywhere;
+}
+
+.resume-match-heading .btn {
+    flex: 0 0 auto;
+}
+
+.resume-detected-skills {
+    align-items: center;
+    border-bottom: 1px solid rgba(20, 20, 19, 0.1);
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+    padding-bottom: 0.7rem;
+}
+
+.resume-match-version {
+    margin-top: 0.5rem;
+}
+
+.resume-skill-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.resume-skill-chip {
+    border: 1px solid rgba(20, 20, 19, 0.14);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    padding: 0.12rem 0.45rem;
+}
+
+.resume-skill-chip-resume {
+    background: #eaf2fa;
+    color: #315576;
+}
+
+.resume-skill-chip-matched {
+    background: #edf5ec;
+    color: #466633;
+}
+
+.resume-skill-chip-missing {
+    background: #fbf1e7;
+    color: #765022;
+}
+
+.resume-match-list {
+    list-style: none;
+    margin: 0.65rem 0 0;
+    padding: 0;
+}
+
+.resume-match-row {
+    border-top: 1px solid rgba(20, 20, 19, 0.1);
+    padding: 0.75rem 0;
+}
+
+.resume-match-row:first-child {
+    border-top: 0;
+}
+
+.resume-match-job-heading > div {
+    min-width: 0;
+}
+
+.resume-match-job-heading h6 {
+    font-size: 0.94rem;
+    overflow-wrap: anywhere;
+}
+
+.resume-match-score {
+    color: #315576;
+    flex: 0 0 auto;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.resume-match-score-na {
+    color: #65655e;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.resume-match-explanation {
+    line-height: 1.55;
+    margin-top: 0.4rem;
+}
+
+.resume-match-skill-row {
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.45rem;
+}
+
+.resume-match-skill-row > span:first-child {
+    color: #565650;
+    flex: 0 0 4rem;
+    font-size: 0.78rem;
+}
+
+.resume-match-message {
+    color: #565650;
+    margin: 0;
+    padding: 0.65rem 0;
+}
+
 .resume-detail p {
     margin: 0;
 }
@@ -717,6 +867,15 @@
     .resume-detail-error {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .resume-match-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .resume-match-heading .btn {
+        align-self: flex-start;
     }
 
     .admin-overview-grid {

@@ -51,6 +51,12 @@ public class GlobalExceptionHandler {
                         System.currentTimeMillis()));
     }
 
+    @ExceptionHandler(ResumeMatchUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleResumeMatchUnavailableException(ResumeMatchUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), System.currentTimeMillis()));
+    }
+
     @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
     public ResponseEntity<ErrorResponse> handleMultipartException(Exception ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

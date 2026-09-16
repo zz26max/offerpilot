@@ -48,7 +48,8 @@ const apiMessageTranslations = {
     "Only valid PDF or DOCX resume files are allowed": "仅支持内容有效的 PDF 或 DOCX 简历。",
     "Resume file must not exceed 5 MiB": "简历文件不能超过 5 MiB。",
     "Resume file must not be empty": "简历文件不能为空。",
-    "Resume storage is temporarily unavailable": "简历存储暂时不可用，请稍后重试。"
+    "Resume storage is temporarily unavailable": "简历存储暂时不可用，请稍后重试。",
+    "Resume matching requires successfully parsed resume text": "简历文本尚未准备好，请刷新解析状态后重试。"
 };
 
 const apiMessagePatterns = [

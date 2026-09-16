@@ -1,8 +1,8 @@
-import {act, fireEvent, screen, waitFor} from "@testing-library/react";
+import {act, fireEvent, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
 import ResumePanel from "./ResumePanel";
-import {formatContentType, MAX_RESUME_SIZE_BYTES} from "./resumePanelUtils";
+import {formatContentType, formatMatchScore, MAX_RESUME_SIZE_BYTES} from "./resumePanelUtils";
 import {renderWithProviders} from "../test/test-utils";
 
 vi.mock("axios");
@@ -27,6 +27,34 @@ const succeededResume = {
     attempts: 1,
     parsedAt: "2026-09-15T10:15:04",
     updatedAt: "2026-09-15T10:15:04"
+};
+
+const matchResponse = {
+    algorithmVersion: "technical-skills-v1",
+    resumeId: 7,
+    resumeSkills: ["Java", "Spring Boot"],
+    jobs: [
+        {
+            id: 101,
+            title: "Java Backend Engineer",
+            company: "ACME",
+            score: 67,
+            comparable: true,
+            matchedSkills: ["Java", "Spring Boot"],
+            missingSkills: ["Kubernetes"],
+            explanation: "简历覆盖 2/3 项已识别岗位技能，规则匹配度为 67%。"
+        },
+        {
+            id: 102,
+            title: "Operations Coordinator",
+            company: "Example Co",
+            score: null,
+            comparable: false,
+            matchedSkills: [],
+            missingSkills: [],
+            explanation: "岗位信息中未识别到规则词典内的技术技能，暂时无法比较。"
+        }
+    ]
 };
 
 const createDeferred = () => {
@@ -56,6 +84,12 @@ describe("ResumePanel", () => {
             .toBe("DOCX");
         expect(formatContentType("application/x-private-format")).toBe("其他格式");
         expect(formatContentType(null)).toBe("—");
+    });
+
+    it("never presents a null or invalid match score as zero", () => {
+        expect(formatMatchScore({comparable: true, score: 67})).toBe("67%");
+        expect(formatMatchScore({comparable: false, score: null})).toBe("不可比较");
+        expect(formatMatchScore({comparable: true, score: null})).toBe("不可比较");
     });
 
     afterEach(() => {
@@ -249,6 +283,114 @@ describe("ResumePanel", () => {
         await user.click(screen.getByRole("button", {name: "重试加载"}));
         expect(await screen.findByText("恢复后的文本")).toBeInTheDocument();
         expect(axios.get).toHaveBeenCalledTimes(3);
+    });
+
+    it("loads job matches lazily, preserves server order, and reuses the cached result", async () => {
+        axios.get
+            .mockResolvedValueOnce({data: [succeededResume]})
+            .mockResolvedValueOnce({data: matchResponse});
+        renderWithProviders(<ResumePanel/>);
+        const user = userEvent.setup();
+
+        const matchButton = await screen.findByRole("button", {name: "查看岗位匹配"});
+        expect(screen.queryByText("Java Backend Engineer")).not.toBeInTheDocument();
+        expect(axios.get).toHaveBeenCalledTimes(1);
+        await user.click(matchButton);
+
+        expect(await screen.findByText("Java Backend Engineer")).toBeInTheDocument();
+        expect(axios.get).toHaveBeenNthCalledWith(2, "http://localhost:8080/api/resumes/7/matches", {
+            headers: {Authorization: "Bearer jwt-resume"}
+        });
+        expect(screen.getByText("规则版本：technical-skills-v1")).toBeInTheDocument();
+        expect(screen.getAllByText("Java")).toHaveLength(2);
+        expect(screen.getByText("Kubernetes")).toBeInTheDocument();
+        const rows = screen.getAllByRole("listitem");
+        expect(within(rows[0]).getByText("67%")).toBeInTheDocument();
+        expect(within(rows[1]).getByText("不可比较")).toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", {name: "收起岗位匹配"}));
+        expect(screen.queryByText("Java Backend Engineer")).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", {name: "查看岗位匹配"}));
+        expect(screen.getByText("Java Backend Engineer")).toBeInTheDocument();
+        expect(axios.get).toHaveBeenCalledTimes(2);
+    });
+
+    it("recalculates matches and blocks duplicate requests while refreshing", async () => {
+        const refresh = createDeferred();
+        axios.get
+            .mockResolvedValueOnce({data: [succeededResume]})
+            .mockResolvedValueOnce({data: matchResponse})
+            .mockReturnValueOnce(refresh.promise);
+        renderWithProviders(<ResumePanel/>);
+        const user = userEvent.setup();
+
+        await user.click(await screen.findByRole("button", {name: "查看岗位匹配"}));
+        await screen.findByText("Java Backend Engineer");
+        await user.click(screen.getByRole("button", {name: "重新计算"}));
+
+        const refreshingButton = screen.getByRole("button", {name: "正在重新计算…"});
+        expect(refreshingButton).toBeDisabled();
+        fireEvent.click(refreshingButton);
+        expect(axios.get).toHaveBeenCalledTimes(3);
+
+        await act(async () => refresh.resolve({
+            data: {...matchResponse, resumeSkills: ["Docker"], jobs: []}
+        }));
+        expect(await screen.findByText("Docker")).toBeInTheDocument();
+        expect(screen.getByText("当前没有开放岗位可供匹配。")).toBeInTheDocument();
+    });
+
+    it("shows a retry action after match loading fails", async () => {
+        axios.get
+            .mockResolvedValueOnce({data: [succeededResume]})
+            .mockRejectedValueOnce(new Error("temporary"))
+            .mockResolvedValueOnce({data: matchResponse});
+        renderWithProviders(<ResumePanel/>);
+        const user = userEvent.setup();
+
+        await user.click(await screen.findByRole("button", {name: "查看岗位匹配"}));
+        expect(await screen.findByText("暂时无法计算岗位匹配，请稍后重试。")).toBeInTheDocument();
+        await user.click(screen.getByRole("button", {name: "重试岗位匹配"}));
+        expect(await screen.findByText("Java Backend Engineer")).toBeInTheDocument();
+        expect(axios.get).toHaveBeenCalledTimes(3);
+    });
+
+    it("uses the shared session-timeout flow when match loading returns unauthorized", async () => {
+        axios.get
+            .mockResolvedValueOnce({data: [succeededResume]})
+            .mockRejectedValueOnce({response: {status: 401, data: {message: "Invalid session"}}});
+        const {store} = renderWithProviders(<ResumePanel/>, {
+            preloadedState: {
+                user: {
+                    username: "applicant@example.com",
+                    displayName: "Applicant",
+                    role: "ROLE_APPLICANT"
+                }
+            }
+        });
+        const user = userEvent.setup();
+
+        await user.click(await screen.findByRole("button", {name: "查看岗位匹配"}));
+        await waitFor(() => expect(localStorage.getItem("token")).toBeNull());
+        expect(store.getState().user).toEqual({username: "", displayName: "", role: ""});
+        expect(screen.queryByText("暂时无法计算岗位匹配，请稍后重试。")).not.toBeInTheDocument();
+    });
+
+    it("renders null match scores as not comparable instead of zero percent", async () => {
+        axios.get
+            .mockResolvedValueOnce({data: [succeededResume]})
+            .mockResolvedValueOnce({data: {
+                ...matchResponse,
+                resumeSkills: [],
+                jobs: [matchResponse.jobs[1]]
+            }});
+        renderWithProviders(<ResumePanel/>);
+        const user = userEvent.setup();
+
+        await user.click(await screen.findByRole("button", {name: "查看岗位匹配"}));
+        expect(await screen.findByText("不可比较")).toBeInTheDocument();
+        expect(screen.getByText("未识别到当前词典内的技能")).toBeInTheDocument();
+        expect(screen.queryByText("0%")).not.toBeInTheDocument();
     });
 
     it("downloads a blob once and always revokes its object URL", async () => {

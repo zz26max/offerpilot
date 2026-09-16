@@ -19,4 +19,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
      * @return a list of jobs matching the status, sorted from newest to oldest
      */
     List<Job> findByStatusOrderByCreatedAtDesc(JobStatus status);
+
+    List<Job> findTop100ByStatusOrderByCreatedAtDescIdDesc(JobStatus status);
 }

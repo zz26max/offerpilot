@@ -3,12 +3,16 @@ package net.jrodolfo.jobportal.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.jobportal.constant.ResumeParseStatus;
+import net.jrodolfo.jobportal.constant.JobStatus;
+import net.jrodolfo.jobportal.model.Job;
 import net.jrodolfo.jobportal.model.Resume;
+import net.jrodolfo.jobportal.repository.JobRepository;
 import net.jrodolfo.jobportal.repository.ResumeRepository;
 import net.jrodolfo.jobportal.repository.ResumeOutboxRepository;
 import net.jrodolfo.jobportal.repository.UserRepository;
 import net.jrodolfo.jobportal.service.ResumeFileValidator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +28,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import static net.jrodolfo.jobportal.service.ResumeFileValidatorTest.docxBytes;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -68,10 +76,78 @@ class ResumeApiIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private JobRepository jobRepository;
+
+    private final List<Long> matchTestJobIds = new ArrayList<>();
+
     @BeforeEach
     void deleteResumeMetadata() {
         outboxRepository.deleteAll();
         resumeRepository.deleteAll();
+    }
+
+    @AfterEach
+    void deleteMatchTestJobs() {
+        jobRepository.deleteAllById(matchTestJobIds);
+        matchTestJobIds.clear();
+    }
+
+    @Test
+    void applicantCanMatchOwnParsedResumeAgainstOpenJobsWithoutSensitiveFields() throws Exception {
+        Resume parsedResume = resumeRepository.saveAndFlush(parsedResume(
+                ResumeParseStatus.SUCCEEDED,
+                "JAVA, springboot and Docker"
+        ));
+        Job open = saveMatchJob("OfferPilot match open", "Java Spring Boot Kubernetes", JobStatus.OPEN);
+        saveMatchJob("OfferPilot match closed", "Java Docker", JobStatus.CLOSED);
+
+        String body = mockMvc.perform(get("/api/resumes/{id}/matches", parsedResume.getId())
+                        .with(httpBasic("user@local.test", "user123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.algorithmVersion").value("technical-skills-v1"))
+                .andExpect(jsonPath("$.resumeId").value(parsedResume.getId()))
+                .andExpect(jsonPath("$.resumeSkills").isArray())
+                .andExpect(jsonPath("$.storageKey").doesNotExist())
+                .andExpect(jsonPath("$.sha256").doesNotExist())
+                .andExpect(jsonPath("$.extractedText").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode response = objectMapper.readTree(body);
+        JsonNode openMatch = findJobMatch(response, "OfferPilot match open");
+        assertEquals(open.getId(), openMatch.get("id").asLong());
+        assertEquals(67, openMatch.get("score").asInt());
+        assertEquals(true, openMatch.get("comparable").asBoolean());
+        assertEquals(List.of("Java", "Spring Boot"), objectMapper.convertValue(
+                openMatch.get("matchedSkills"),
+                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class)
+        ));
+        assertEquals(List.of("Kubernetes"), objectMapper.convertValue(
+                openMatch.get("missingSkills"),
+                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class)
+        ));
+        assertFalse(response.get("jobs").findValuesAsText("title").contains("OfferPilot match closed"));
+        assertFalse(body.contains("JAVA, springboot and Docker"));
+        assertFalse(body.contains("\"storageKey\""));
+        assertFalse(body.contains("\"sha256\""));
+        assertFalse(body.contains("\"extractedText\""));
+
+        mockMvc.perform(get("/api/resumes/{id}/matches", parsedResume.getId())
+                        .with(user("other@applicant.test").roles("APPLICANT")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void matchingRequiresSuccessfullyParsedNonBlankText() throws Exception {
+        Resume queuedResume = resumeRepository.saveAndFlush(parsedResume(ResumeParseStatus.QUEUED, null));
+
+        mockMvc.perform(get("/api/resumes/{id}/matches", queuedResume.getId())
+                        .with(httpBasic("user@local.test", "user123")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message")
+                        .value("Resume matching requires successfully parsed resume text"))
+                .andExpect(jsonPath("$.timestamp").isNumber());
     }
 
     @Test
@@ -205,6 +281,14 @@ class ResumeApiIntegrationTest {
 
         mockMvc.perform(get("/api/resumes").with(httpBasic("user@local.test", "user123")))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/resumes/1/matches"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+
+        mockMvc.perform(get("/api/resumes/1/matches").with(httpBasic("admin@local.test", "admin123")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403));
     }
 
     @Test
@@ -298,5 +382,36 @@ class ResumeApiIntegrationTest {
                 Integer.class,
                 saved.getId()
         ));
+    }
+
+    private Resume parsedResume(ResumeParseStatus status, String extractedText) {
+        Resume resume = new Resume(
+                userRepository.findByEmailIgnoreCase("user@local.test").orElseThrow(),
+                "match-test.pdf",
+                UUID.randomUUID() + ".pdf",
+                ResumeFileValidator.PDF_CONTENT_TYPE,
+                12,
+                "c".repeat(64)
+        );
+        resume.setParseStatus(status);
+        resume.setExtractedText(extractedText);
+        return resume;
+    }
+
+    private Job saveMatchJob(String title, String description, JobStatus status) {
+        Job job = new Job(title, description, "Match Test Company");
+        job.setStatus(status);
+        Job saved = jobRepository.saveAndFlush(job);
+        matchTestJobIds.add(saved.getId());
+        return saved;
+    }
+
+    private JsonNode findJobMatch(JsonNode response, String title) {
+        for (JsonNode match : response.path("jobs")) {
+            if (title.equals(match.path("title").asText())) {
+                return match;
+            }
+        }
+        throw new AssertionError("Expected job match was not returned: " + title);
     }
 }
