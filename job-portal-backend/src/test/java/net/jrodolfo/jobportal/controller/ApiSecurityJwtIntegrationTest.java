@@ -78,4 +78,16 @@ class ApiSecurityJwtIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Location"));
     }
+
+    @Test
+    void protectedEndpointShouldRejectForgedRs256GoogleToken() throws Exception {
+        String forgedToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJlbWFpbCI6ImFkbWluQGxvY2FsLnRlc3QiLCJleHAiOjIxNDc0ODM2NDd9."
+                + "forged-signature";
+
+        mockMvc.perform(get("/api/jobs/admin")
+                        .header("Authorization", "Bearer " + forgedToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("Location"));
+    }
 }

@@ -26,36 +26,30 @@ describe('OAuthLogin', () => {
         vi.unstubAllGlobals();
     });
 
-    it('should exchange code, fetch user details, update store and navigate', async () => {
-        axios.post.mockResolvedValueOnce({
-            data: {token: 'oauth-token'}
-        });
+    it('should use the application token, fetch application user details, update store and navigate', async () => {
         axios.get.mockResolvedValueOnce({
-            data: {email: 'oauth.user@example.com', name: 'OAuth User'}
+            data: {
+                username: 'oauth.user@example.com',
+                displayName: 'OAuth User',
+                roles: ['ROLE_APPLICANT']
+            }
         });
-        window.history.pushState({}, '', '/oauthlogon?code=abc123');
+        window.history.pushState({}, '', '/oauthlogon#token=application-jwt');
 
         const {store} = renderWithProviders(<OAuthLogin/>);
 
         await waitFor(() =>
-            expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:8080/api/oauth/exchange-token',
-                {code: 'abc123'}
-            )
-        );
-
-        await waitFor(() =>
             expect(axios.get).toHaveBeenCalledWith(
-                'http://localhost:8080/api/oauth/user-details',
+                'http://localhost:8080/api/auth/details',
                 {
                     headers: {
-                        Authorization: 'Bearer oauth-token'
+                        Authorization: 'Bearer application-jwt'
                     }
                 }
             )
         );
 
-        expect(localStorage.getItem('token')).toBe('oauth-token');
+        expect(localStorage.getItem('token')).toBe('application-jwt');
         expect(store.getState().user).toEqual({
             username: 'oauth.user@example.com',
             displayName: 'OAuth User',
@@ -67,7 +61,7 @@ describe('OAuthLogin', () => {
     it('should not call exchange endpoint when code is missing', async () => {
         renderWithProviders(<OAuthLogin/>);
 
-        await waitFor(() => expect(axios.post).not.toHaveBeenCalled());
+        await waitFor(() => expect(axios.get).not.toHaveBeenCalled());
         expect(mockNavigate).toHaveBeenCalledWith('/');
     });
 });

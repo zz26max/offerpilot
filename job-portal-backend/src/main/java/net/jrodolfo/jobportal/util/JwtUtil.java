@@ -13,12 +13,13 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.Objects;
 
 
 /**
  * Utility class for handling JSON Web Tokens (JWT).
  * Provides methods to generate, parse, and validate tokens.
- * Supports standard application-issued tokens and basic parsing for Google ID tokens.
+ * Only accepts tokens issued by this application and signed with its HS256 key.
  */
 @Component
 public class JwtUtil {
@@ -40,8 +41,6 @@ public class JwtUtil {
      */
     public String generateToken(String email) {
 
-        System.out.println("generateToken() - JVM now: " + new Date());
-
         return Jwts.builder()
                 .setSubject(email).setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -51,7 +50,9 @@ public class JwtUtil {
 
     /**
      * Extracts the email address (subject) from a JWT token.
-     * Handles both standard application tokens and Google tokens.
+     * Tokens from external identity providers are deliberately rejected here. They
+     * must be verified by Spring Security's OAuth/OIDC support and exchanged for
+     * an application-issued token.
      *
      * @param token the JWT token string
      * @return the email address extracted from the token
@@ -64,11 +65,6 @@ public class JwtUtil {
             throw new IllegalArgumentException("Invalid token");
         }
         token = token.trim();
-
-        // Check if it's likely a Google token (it will have RS256 in header)
-        if (isGoogleToken(token)) {
-            return extractEmailFromUnsignedToken(token);
-        }
 
         JwtParser jwtParser = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -83,48 +79,12 @@ public class JwtUtil {
             throw new ResourceException(e);
         }
 
-        Claims body = claimsJws.getBody();
-        String subject = body.getSubject();
-        return subject;
-    }
-
-    private boolean isGoogleToken(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) return false;
-            String header = new String(java.util.Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-            return (header.contains("RS256") && payload.contains("accounts.google.com"));
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private String extractEmailFromUnsignedToken(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-            // Simple JSON parsing to get "email" or "sub"
-            if (payload.contains("\"email\":\"")) {
-                int start = payload.indexOf("\"email\":\"") + 9;
-                int end = payload.indexOf("\"", start);
-                return payload.substring(start, end);
-            }
-            if (payload.contains("\"sub\":\"")) {
-                int start = payload.indexOf("\"sub\":\"") + 7;
-                int end = payload.indexOf("\"", start);
-                return payload.substring(start, end);
-            }
-        } catch (Exception e) {
-            throw new ResourceException("Could not extract email from Google token", e);
-        }
-        return null;
+        return claimsJws.getBody().getSubject();
     }
 
     /**
      * Validates a JWT token against a given email address.
      * Checks if the token is correctly signed, matches the provided email, and has not expired.
-     * Special handling is included for tokens identified as coming from Google.
      *
      * @param token the JWT token string to validate
      * @param email the email address to validate against
@@ -136,25 +96,6 @@ public class JwtUtil {
             token = token.trim();
         }
 
-        if (isGoogleToken(token)) {
-            // For Google tokens, we already extracted the email.
-            // In a real app, we should verify the signature against Google's public keys.
-            // For now, we trust it if it contains the correct email and is not expired.
-            try {
-                String[] parts = token.split("\\.");
-                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                if (payload.contains("\"exp\":")) {
-                    int start = payload.indexOf("\"exp\":") + 6;
-                    int end = payload.indexOf(",", start);
-                    if (end == -1) end = payload.indexOf("}", start);
-                    long exp = Long.parseLong(payload.substring(start, end).trim());
-                    return extractEmailFromUnsignedToken(token).equals(email) && exp * 1000 > System.currentTimeMillis();
-                }
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
@@ -163,10 +104,11 @@ public class JwtUtil {
                     .parseClaimsJws(token)
                     .getBody();
 
-            return claims.getSubject().equals(email)
+            return Objects.equals(claims.getSubject(), email)
+                    && claims.getExpiration() != null
                     && claims.getExpiration().after(new Date());
 
-        } catch (JwtException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }

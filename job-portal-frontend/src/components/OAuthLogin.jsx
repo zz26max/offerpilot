@@ -18,24 +18,23 @@ const OAuthLogin = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        // Extract token/code from the callback URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenFromRedirect = urlParams.get("token");
-        const code = urlParams.get("code");
+        // The backend places its application JWT in the fragment so it is not
+        // sent in HTTP requests or referrer headers.
+        const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+        const tokenFromRedirect = fragmentParams.get("token");
 
         const finalizeLogin = (token) => {
             localStorage.setItem("token", token);
-            axios.get(`${BACKEND_API_URL}/api/oauth/user-details`, {
+            axios.get(`${BACKEND_API_URL}/api/auth/details`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             })
                 .then(response => {
-                    console.log("User Details:", response.data);
                     const user = {
-                        role: "ROLE_APPLICANT",
-                        username: response.data.email,
-                        displayName: response.data.name || response.data.email
+                        role: response.data.roles?.[0] || "",
+                        username: response.data.username,
+                        displayName: response.data.displayName || response.data.username
                     };
                     setUserDetails(dispatch)(user);
                     navigate("/applicant-dashboard");
@@ -52,26 +51,8 @@ const OAuthLogin = () => {
             return;
         }
 
-        if (code) {
-            // Fallback flow for authorization-code exchange
-            axios.post(`${BACKEND_API_URL}/api/oauth/exchange-token`, {code})
-                .then(response => {
-                    const token = response.data.token;
-                    if (!token) {
-                        throw new Error("Missing OAuth token");
-                    }
-                    finalizeLogin(token);
-                })
-                .catch(error => {
-                    console.error("Error exchanging code for token:", error);
-                    alert("登录失败，请重试。");
-                    navigate("/");
-                });
-        } else {
-            console.error("No authorization code found in URL.");
-            alert("Google 登录未返回有效凭证，请重试。");
-            navigate("/");
-        }
+        alert("Google 登录未返回有效凭证，请重试。");
+        navigate("/");
     }, [dispatch, navigate]);
 
     return (

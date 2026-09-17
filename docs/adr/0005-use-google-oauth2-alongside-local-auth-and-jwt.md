@@ -19,8 +19,11 @@ multiple auth paths.
 Keep a hybrid authentication model:
 
 - local credentials remain available
-- Google OAuth2 login is supported through Spring Security OAuth client setup
-- JWT tokens are issued and used for backend API access where appropriate
+- Google OAuth2 login is verified through Spring Security's OpenID Connect client
+- after a verified OIDC login, the backend creates or updates a local Google
+  applicant and issues its own HS256 JWT for API access
+- raw provider ID tokens are never trusted by the application JWT filter or
+  exposed through token helper endpoints
 
 ## Rationale
 

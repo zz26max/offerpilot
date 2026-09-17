@@ -57,19 +57,16 @@ class ApplicationControllerTest {
 
     @Test
     void applyForJobShouldReturnCreatedForApplicant() throws Exception {
-        User user = new User();
-        user.setName("user");
-        user.setEmail("user@local.test");
-        Job job = new Job("Java Developer", "Build APIs", "ACME");
-        job.setId(1L);
-        Application application = new Application(user, job);
-        application.setId(50L);
+        Application application = application(50L, "user@local.test");
 
         when(applicationService.applyForJob("user@local.test", 1L)).thenReturn(application);
 
         mockMvc.perform(post("/api/applications/1")
                         .with(httpBasic("user@local.test", "user123")))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.name").value("user"))
+                .andExpect(jsonPath("$.user.email").value("user@local.test"))
+                .andExpect(jsonPath("$..password").doesNotExist());
     }
 
     @Test
@@ -85,11 +82,14 @@ class ApplicationControllerTest {
 
     @Test
     void getApplicationsShouldRequireAuthentication() throws Exception {
-        when(applicationService.getApplicationsByEmail("user@local.test")).thenReturn(List.of(new Application()));
+        when(applicationService.getApplicationsByEmail("user@local.test"))
+                .thenReturn(List.of(application(51L, "user@local.test")));
 
         mockMvc.perform(get("/api/applications")
                         .with(httpBasic("user@local.test", "user123")))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].user.email").value("user@local.test"))
+                .andExpect(jsonPath("$..password").doesNotExist());
 
         mockMvc.perform(get("/api/applications"))
                 .andExpect(status().isUnauthorized());
@@ -97,12 +97,7 @@ class ApplicationControllerTest {
 
     @Test
     void putApplicationShouldAllowApplicantWithdrawAndForbidOtherStatus() throws Exception {
-        User user = new User();
-        user.setName("user");
-        user.setEmail("user@local.test");
-        Job job = new Job("Java Developer", "Build APIs", "ACME");
-        Application application = new Application(user, job);
-        application.setId(10L);
+        Application application = application(10L, "user@local.test");
 
         when(applicationService.getApplicationById(10L)).thenReturn(application);
         when(applicationService.updateApplicationStatus(eq(10L), eq(ApplicationStatus.WITHDRAWN))).thenReturn(application);
@@ -110,7 +105,9 @@ class ApplicationControllerTest {
         mockMvc.perform(put("/api/applications/10")
                         .with(httpBasic("user@local.test", "user123"))
                         .param("status", "WITHDRAWN"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.email").value("user@local.test"))
+                .andExpect(jsonPath("$..password").doesNotExist());
 
         mockMvc.perform(put("/api/applications/10")
                         .with(httpBasic("user@local.test", "user123"))
@@ -147,6 +144,19 @@ class ApplicationControllerTest {
     }
 
     @Test
+    void getApplicationByIdShouldReturnSafeResponseWithoutPassword() throws Exception {
+        Application application = application(13L, "user@local.test");
+        when(applicationService.getApplicationById(13L)).thenReturn(application);
+
+        mockMvc.perform(get("/api/applications/13")
+                        .with(httpBasic("user@local.test", "user123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.name").value("user"))
+                .andExpect(jsonPath("$.job.title").value("Java Developer"))
+                .andExpect(jsonPath("$..password").doesNotExist());
+    }
+
+    @Test
     void deleteApplicationShouldAllowOwner() throws Exception {
         User user = new User();
         user.setName("user");
@@ -170,5 +180,18 @@ class ApplicationControllerTest {
                         .with(httpBasic("admin@local.test", "admin123")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Application with id 88 was not found"));
+    }
+
+    private Application application(Long id, String email) {
+        User user = new User();
+        user.setId(1L);
+        user.setName("user");
+        user.setEmail(email);
+        user.setPassword("{bcrypt}sensitive-hash");
+        Job job = new Job("Java Developer", "Build APIs", "ACME");
+        job.setId(1L);
+        Application application = new Application(user, job);
+        application.setId(id);
+        return application;
     }
 }

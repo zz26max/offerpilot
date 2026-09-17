@@ -144,6 +144,41 @@ public class UserService {
     }
 
     /**
+     * Creates or refreshes the local applicant record for a verified Google
+     * identity. Local-password accounts are not implicitly linked, preventing an
+     * OAuth login from changing the authentication provider or role of an
+     * existing privileged account.
+     */
+    @Transactional
+    public User createOrUpdateGoogleApplicant(String email, String displayName) {
+        String normalizedEmail = email == null ? "" : email.trim();
+        if (normalizedEmail.isEmpty()) {
+            throw new IllegalArgumentException("Verified Google account did not provide an email");
+        }
+
+        String normalizedName = displayName == null || displayName.isBlank()
+                ? normalizedEmail
+                : displayName.trim();
+
+        return userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .map(existing -> updateGoogleApplicant(existing, normalizedName))
+                .orElseGet(() -> userRepository.save(
+                        new User(normalizedName, normalizedEmail, AuthProvider.GOOGLE, Role.APPLICANT)
+                ));
+    }
+
+    private User updateGoogleApplicant(User existing, String displayName) {
+        if (existing.getAuthProvider() != AuthProvider.GOOGLE
+                || existing.getRole() != Role.APPLICANT
+                || !existing.isEnabled()) {
+            throw new IllegalStateException("Google account cannot be linked to the existing user");
+        }
+
+        existing.setName(displayName);
+        return userRepository.save(existing);
+    }
+
+    /**
      * Enables or disables an applicant account.
      * <p>
      * Admin users cannot be modified here. Disabling an applicant prevents

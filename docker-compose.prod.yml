@@ -1,9 +1,30 @@
 services:
+  db:
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?MYSQL_DATABASE is required for production}
+      MYSQL_USER: ${MYSQL_USER:?MYSQL_USER is required for production}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required for production}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required for production}
+
+  rabbitmq:
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required for production}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required for production}
+
   backend:
     depends_on:
       - db
       - otel-collector
     environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:?MYSQL_DATABASE is required for production}?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:?MYSQL_USER is required for production}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required for production}
+      RABBITMQ_USER: ${RABBITMQ_USER:?RABBITMQ_USER is required for production}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required for production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required for production}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required for production}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required for production}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-job-portal-backend}
       OTEL_RESOURCE_ATTRIBUTES: ${OTEL_RESOURCE_ATTRIBUTES:-service.namespace=job-portal,service.version=0.2.0,deployment.environment=prod}
       OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
@@ -23,8 +44,8 @@ services:
     volumes:
       - ./docs/otel/collector-prod.yaml:/etc/otelcol-contrib/config.yaml:ro
     environment:
-      OTEL_UPSTREAM_OTLP_ENDPOINT: ${OTEL_UPSTREAM_OTLP_ENDPOINT}
-      OTEL_UPSTREAM_API_KEY: ${OTEL_UPSTREAM_API_KEY}
+      OTEL_UPSTREAM_OTLP_ENDPOINT: ${OTEL_UPSTREAM_OTLP_ENDPOINT:?OTEL_UPSTREAM_OTLP_ENDPOINT is required for production}
+      OTEL_UPSTREAM_API_KEY: ${OTEL_UPSTREAM_API_KEY:?OTEL_UPSTREAM_API_KEY is required for production}
     ports:
       - "4317:4317"
       - "4318:4318"

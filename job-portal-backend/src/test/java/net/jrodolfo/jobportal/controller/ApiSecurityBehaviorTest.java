@@ -71,6 +71,19 @@ class ApiSecurityBehaviorTest {
     }
 
     @Test
+    void removedOauthHelperEndpointsAreNotPublicAndDoNotFailWithServerError() throws Exception {
+        mockMvc.perform(get("/api/oauth/token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("Location"));
+        mockMvc.perform(get("/api/oauth/user-details"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("Location"));
+        mockMvc.perform(post("/api/oauth/exchange-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @Test
     void cacheNoneTestContextStartsAndMetricsBinderRemainsSafe() {
         assertNotNull(cacheManager);
         assertNotNull(jobCacheMetricsBinder);

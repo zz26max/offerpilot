@@ -64,6 +64,7 @@ services:
       otel-collector:
         condition: service_started
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-jobportal}?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-jobuser}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-jobpass}

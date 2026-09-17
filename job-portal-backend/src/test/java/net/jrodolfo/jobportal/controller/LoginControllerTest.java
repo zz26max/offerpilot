@@ -89,6 +89,12 @@ class LoginControllerTest {
     }
 
     @Test
+    void detailsShouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/api/auth/details"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void registerShouldCreateApplicantAccountWithoutAuthentication() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

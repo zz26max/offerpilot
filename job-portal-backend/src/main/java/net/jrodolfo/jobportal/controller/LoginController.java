@@ -21,12 +21,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.util.HashMap;
@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 @Tag(name = "Auth", description = "Authentication and user identity endpoints")
 public class LoginController {
 
@@ -73,10 +72,7 @@ public class LoginController {
     })
     public Map<String, String> login(Principal principal) {
         String email = principal.getName(); // fetched from Spring Security
-        System.out.println("email: " + email);
-        // Generate token
         String token = jwtUtil.generateToken(email);
-        System.out.println("token: " + token);
 
         // Return as JSON
         Map<String, String> response = new HashMap<>();
@@ -124,8 +120,7 @@ public class LoginController {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList()));
         } else {
-            response.put("error", "User NOT authenticated");
-            System.out.println("\n\n\t\tUser not authenticated\n\n\n");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Application authentication is required");
         }
         return response;
     }

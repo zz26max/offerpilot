@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link JwtUtil}.
- * Verifies JWT generation, email extraction, and token validation for both standard and Google-like tokens.
+ * Verifies JWT generation, email extraction, and strict rejection of externally signed tokens.
  */
 class JwtUtilTest {
 
@@ -65,19 +65,9 @@ class JwtUtilTest {
     }
 
     @Test
-    void shouldValidateGoogleTokenWhenEmailMatchesAndTokenNotExpired() {
+    void shouldRejectUnsignedGoogleLikeTokenDuringValidation() {
         long futureEpochSeconds = (System.currentTimeMillis() / 1000) + 3600;
         String token = buildGoogleLikeToken("google.user@example.com", futureEpochSeconds);
-
-        boolean valid = jwtUtil.validateToken(token, "google.user@example.com");
-
-        assertTrue(valid);
-    }
-
-    @Test
-    void shouldRejectGoogleTokenWhenExpired() {
-        long pastEpochSeconds = (System.currentTimeMillis() / 1000) - 3600;
-        String token = buildGoogleLikeToken("google.user@example.com", pastEpochSeconds);
 
         boolean valid = jwtUtil.validateToken(token, "google.user@example.com");
 
@@ -85,13 +75,11 @@ class JwtUtilTest {
     }
 
     @Test
-    void shouldExtractEmailFromGoogleLikeToken() {
+    void shouldRejectUnsignedGoogleLikeTokenDuringExtraction() {
         long futureEpochSeconds = (System.currentTimeMillis() / 1000) + 3600;
         String token = buildGoogleLikeToken("google.user@example.com", futureEpochSeconds);
 
-        String email = jwtUtil.extractEmail(token);
-
-        assertEquals("google.user@example.com", email);
+        assertThrows(ResourceException.class, () -> jwtUtil.extractEmail(token));
     }
 
     private String buildGoogleLikeToken(String email, long expEpochSeconds) {

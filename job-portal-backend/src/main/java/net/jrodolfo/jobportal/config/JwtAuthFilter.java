@@ -67,7 +67,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 email = jwtUtil.extractEmail(token);
             } catch (Exception e) {
-                System.out.println("Invalid token: " + e.getMessage());
+                // Invalid bearer tokens remain unauthenticated. Do not log token-derived data.
             }
         }
 
@@ -76,7 +76,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 userDetails = userDetailsService.loadUserByUsername(email);
             } catch (UsernameNotFoundException e) {
-                System.out.println("JWT user not found: " + email);
+                // Avoid logging account identifiers during authentication failures.
             }
 
             // check if the token is valid

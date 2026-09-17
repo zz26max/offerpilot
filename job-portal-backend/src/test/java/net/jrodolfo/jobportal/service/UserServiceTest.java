@@ -177,4 +177,38 @@ class UserServiceTest {
         assertEquals(409, ex.getStatusCode().value());
         verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
     }
+
+    @Test
+    void createOrUpdateGoogleApplicantShouldCreateApplicantForVerifiedIdentity() {
+        when(userRepository.findByEmailIgnoreCase("oauth@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.createOrUpdateGoogleApplicant("oauth@example.com", "OAuth User");
+
+        assertEquals("oauth@example.com", result.getEmail());
+        assertEquals("OAuth User", result.getName());
+        assertEquals(AuthProvider.GOOGLE, result.getAuthProvider());
+        assertEquals(Role.APPLICANT, result.getRole());
+    }
+
+    @Test
+    void createOrUpdateGoogleApplicantShouldRejectImplicitLinkToLocalAccount() {
+        User local = new User("Local User", "oauth@example.com", "encoded", AuthProvider.LOCAL, Role.APPLICANT);
+        when(userRepository.findByEmailIgnoreCase("oauth@example.com")).thenReturn(Optional.of(local));
+
+        assertThrows(IllegalStateException.class,
+                () -> userService.createOrUpdateGoogleApplicant("oauth@example.com", "OAuth User"));
+        verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+    }
+
+    @Test
+    void createOrUpdateGoogleApplicantShouldRejectDisabledGoogleAccount() {
+        User disabled = new User("OAuth User", "oauth@example.com", AuthProvider.GOOGLE, Role.APPLICANT);
+        disabled.setEnabled(false);
+        when(userRepository.findByEmailIgnoreCase("oauth@example.com")).thenReturn(Optional.of(disabled));
+
+        assertThrows(IllegalStateException.class,
+                () -> userService.createOrUpdateGoogleApplicant("oauth@example.com", "OAuth User"));
+        verify(userRepository, never()).save(org.mockito.ArgumentMatchers.any(User.class));
+    }
 }

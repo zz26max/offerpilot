@@ -7,13 +7,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,10 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import net.jrodolfo.jobportal.repository.UserRepository;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Main security configuration class for the application.
@@ -93,7 +86,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             JwtAuthFilter jwtAuthFilter,
                                             ApiAuthenticationEntryPoint apiAuthenticationEntryPoint,
-                                            ApiAccessDeniedHandler apiAccessDeniedHandler) throws Exception {
+                                            ApiAccessDeniedHandler apiAccessDeniedHandler,
+                                            OidcLoginSuccessHandler oidcLoginSuccessHandler) throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
@@ -115,8 +109,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/applications/**").hasAnyRole("APPLICANT", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/applications/**").hasAnyRole("APPLICANT", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").authenticated()
-                        .requestMatchers("/oauth/**", "/login/**", "/oauth2/**", "/api/oauth/**").permitAll() //Allow OAuth endpoints
-                        .requestMatchers(HttpMethod.GET, "/api/auth/details").permitAll()
+                        .requestMatchers("/oauth/**", "/login/**", "/oauth2/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/details").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
@@ -131,31 +125,8 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(basic -> basic.authenticationEntryPoint(apiAuthenticationEntryPoint))
-                //.oauth2Login(Customizer.withDefaults()) //Enable Google OAuth login
                 .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(userRequest -> {
-                                    var delegate = new DefaultOAuth2UserService();
-                                    var oauth2User = delegate.loadUser(userRequest);
-
-                                    // Assign ROLE_APPLICANT to every OAuth user
-                                    return new DefaultOAuth2User(
-                                            List.of(new SimpleGrantedAuthority("ROLE_APPLICANT")),
-                                            oauth2User.getAttributes(),
-                                            "email"
-                                    );
-                                })
-                        )
-                        .successHandler((request, response, authentication) -> {
-                            String redirectBase = frontendBaseUrl + "/oauthlogon";
-                            if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
-                                String idToken = oidcUser.getIdToken().getTokenValue();
-                                String encodedToken = URLEncoder.encode(idToken, StandardCharsets.UTF_8);
-                                response.sendRedirect(redirectBase + "?token=" + encodedToken);
-                                return;
-                            }
-                            response.sendRedirect(redirectBase);
-                        })
+                        .successHandler(oidcLoginSuccessHandler)
                         .failureHandler((request, response, exception) ->
                                 response.sendRedirect(frontendBaseUrl + "/?oauth_error=true"))
                 )

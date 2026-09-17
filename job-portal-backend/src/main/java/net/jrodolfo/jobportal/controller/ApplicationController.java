@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import net.jrodolfo.jobportal.constant.ApplicationStatus;
 import net.jrodolfo.jobportal.exception.ErrorResponse;
+import net.jrodolfo.jobportal.dto.ApplicationResponse;
 import net.jrodolfo.jobportal.model.Application;
 import net.jrodolfo.jobportal.service.ApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,9 +71,10 @@ public class ApplicationController {
             @ApiResponse(responseCode = "201", description = "Application created"),
             @ApiResponse(responseCode = "409", description = "Application already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Application> applyForJob(Principal principal, @PathVariable Long jobId) {
+    public ResponseEntity<ApplicationResponse> applyForJob(Principal principal, @PathVariable Long jobId) {
         String email = principal.getName();
-        return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.applyForJob(email, jobId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApplicationResponse.from(applicationService.applyForJob(email, jobId)));
     }
 
     /**
@@ -86,11 +88,11 @@ public class ApplicationController {
     @GetMapping
     @Operation(summary = "Get applications", description = "Admins get all applications; applicants get only their own.", security = @SecurityRequirement(name = "basicAuth"))
     @ApiResponse(responseCode = "200", description = "Applications returned")
-    public ResponseEntity<List<Application>> getApplications(Authentication authentication) {
+    public ResponseEntity<List<ApplicationResponse>> getApplications(Authentication authentication) {
         if (isAdmin(authentication)) {
-            return ResponseEntity.ok(applicationService.getAllApplications());
+            return ResponseEntity.ok(toResponses(applicationService.getAllApplications()));
         }
-        return ResponseEntity.ok(applicationService.getApplicationsByEmail(authentication.getName()));
+        return ResponseEntity.ok(toResponses(applicationService.getApplicationsByEmail(authentication.getName())));
     }
 
     /**
@@ -109,9 +111,9 @@ public class ApplicationController {
             @ApiResponse(responseCode = "200", description = "Application returned"),
             @ApiResponse(responseCode = "404", description = "Application not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Application> getApplicationById(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<ApplicationResponse> getApplicationById(@PathVariable Long id, Authentication authentication) {
         Application application = getAuthorizedApplication(id, authentication);
-        return ResponseEntity.ok(application);
+        return ResponseEntity.ok(ApplicationResponse.from(application));
     }
 
     /**
@@ -132,7 +134,7 @@ public class ApplicationController {
             @ApiResponse(responseCode = "200", description = "Application updated"),
             @ApiResponse(responseCode = "404", description = "Application not found or unauthorized", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Application> updateApplication(@PathVariable Long id,
+    public ResponseEntity<ApplicationResponse> updateApplication(@PathVariable Long id,
                                                          @RequestParam ApplicationStatus status,
                                                          Authentication authentication) {
         Application existingApplication = getAuthorizedApplication(id, authentication);
@@ -143,7 +145,7 @@ public class ApplicationController {
         }
 
         Application updatedApplication = applicationService.updateApplicationStatus(existingApplication.getId(), status);
-        return ResponseEntity.ok(updatedApplication);
+        return ResponseEntity.ok(ApplicationResponse.from(updatedApplication));
     }
 
     /**
@@ -187,5 +189,9 @@ public class ApplicationController {
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch("ROLE_ADMIN"::equals);
+    }
+
+    private List<ApplicationResponse> toResponses(List<Application> applications) {
+        return applications.stream().map(ApplicationResponse::from).toList();
     }
 }

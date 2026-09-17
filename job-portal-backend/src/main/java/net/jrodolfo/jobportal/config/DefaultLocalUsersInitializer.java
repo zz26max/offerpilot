@@ -7,9 +7,11 @@ import net.jrodolfo.jobportal.repository.UserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile({"local", "test"})
 public class DefaultLocalUsersInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;

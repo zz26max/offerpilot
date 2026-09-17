@@ -441,64 +441,14 @@ Google OAuth note:
 
 2. **Go to**: [http://localhost:8080/oauth2/authorization/google](http://localhost:8080/oauth2/authorization/google) and enter your Google credentials.
 
-3. **Go to**: [http://localhost:8080/api/oauth/user](http://localhost:8080/api/oauth/user) and get a Google OpenID Connect ID token payload like this:
-   ```json
-   {
-     "at_hash": "aaa",
-     "sub": "bbb",
-     "email_verified": true,
-     "iss": "https://accounts.google.com",
-     "given_name": "ccc",
-     "nonce": "ddd",
-     "picture": "https://lh3.googleusercontent.com/a/eee",
-     "aud": [
-       "fff.apps.googleusercontent.com"
-     ],
-     "azp": "ggg.apps.googleusercontent.com",
-     "name": "hhh",
-     "exp": "2026-02-01T17:58:45Z",
-     "family_name": "iii",
-     "iat": "2026-02-01T16:58:45Z",
-     "email": "jjjj@test.com"
-   }
-   ```
+3. After Google completes the OpenID Connect flow, Spring Security verifies the
+   provider response. The backend creates or updates the local Google applicant,
+   issues an application-signed JWT, and redirects to the frontend callback.
 
-4. **Go to**: [http://localhost:8080/api/oauth/token](http://localhost:8080/api/oauth/token) and get a JWT token like this:
-   `eyJhbGc29udGVudC5jb20iLCJz...dWIiOiIxMTM0NTc2NjA1NjY`
-
-   You can paste this token on [jwt.io](https://www.jwt.io/) to decode it. You will get something like this:
-   ```json
-   {
-     "alg": "RS256",
-     "kid": "c27...122",
-     "typ": "JWT"
-   }
-   {
-     "iss": "https://accounts.google.com",
-     "azp": "1...a.apps.googleusercontent.com",
-     "aud": "1.....apps.googleusercontent.com",
-     "sub": "11111",
-     "email": "xxx@test.com",
-     "email_verified": true,
-     "at_hash": "zzzz",
-     "nonce": "....",
-     "name": "ABC",
-     "picture": "https://googleusercontent.com/....",
-     "given_name": "X",
-     "family_name": "Y",
-     "iat": 1770227337,
-     "exp": 1770230937
-   }
-   {
-     "e": "AQAB",
-     "kty": "RSA",
-     "n": "ubOB3C56t2P...mrXJrc2Ws2sizhSqjrPzL"
-   }
-   ```
-
-5. **Test other endpoints**:
-   - [http://localhost:8080/api/oauth/exchange-token](http://localhost:8080/api/oauth/exchange-token)
-   - [http://localhost:8080/api/oauth/user-details](http://localhost:8080/api/oauth/user-details)
+4. The frontend stores that application JWT and calls
+   `GET /api/auth/details` with `Authorization: Bearer <application-jwt>`.
+   Raw Google ID tokens are never returned by helper APIs and are not accepted as
+   application bearer tokens.
 
 ---
 
