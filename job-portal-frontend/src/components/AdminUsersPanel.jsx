@@ -6,29 +6,32 @@ const AdminUsersPanel = ({
     onUpdateEnabled
 }) => {
     if (users.length === 0) {
-        return <p className="body-text">{emptyMessage}</p>;
+        return <div className="empty-state"><strong>{emptyMessage}</strong><span>调整搜索词、角色或账号状态后重试。</span></div>;
     }
 
     return (
-        <div className="row g-4">
+        <div className="admin-record-list user-record-list">
             {users.map((user) => {
                 const isApplicant = user.role === "APPLICANT";
                 const isUpdating = updatingUserId === user.id;
                 return (
-                    <div className="col-md-6 col-xl-4" key={user.id}>
-                        <div className={`card user-card ${user.enabled ? "user-card-enabled" : "user-card-disabled"}`}>
-                            <div className="card-body">
-                                <h4 className="heading-text">{user.name}</h4>
-                                <p className="body-text">
-                                    <span className="metadata-label">邮箱：</span>{user.email}
-                                </p>
-                                <p className="body-text">
-                                    <span className="metadata-label">角色：</span>{formatStatus(user.role)}
-                                </p>
-                                <p className="body-text">
+                    <article className={`user-card admin-user-record ${user.enabled ? "user-card-enabled" : "user-card-disabled"}`} key={user.id}>
+                        <div className="admin-record-main">
+                            <div className="admin-record-title-row">
+                                <div>
+                                    <h4>{user.name}</h4>
+                                    <p className="job-company"><span className="metadata-label">邮箱：</span>{user.email}</p>
+                                </div>
+                                <span className={`status-tag ${user.enabled ? "user-card-enabled" : "user-card-disabled"}`}>
                                     <span className="metadata-label">账号状态：</span>{user.enabled ? "已启用" : "已停用"}
-                                </p>
-                                <div className="d-flex flex-wrap gap-2 admin-card-actions">
+                                </span>
+                            </div>
+                            <p className="body-text admin-user-role"><span className="metadata-label">角色：</span>{formatStatus(user.role)}</p>
+                            {!isApplicant ? (
+                                <p className="body-text muted-meta mt-3 mb-0">管理员账号仅支持查看。</p>
+                            ) : null}
+                        </div>
+                        <div className="admin-card-actions">
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary"
@@ -37,13 +40,8 @@ const AdminUsersPanel = ({
                                     >
                                         {isUpdating ? "正在保存…" : user.enabled ? "停用账号" : "启用账号"}
                                     </button>
-                                </div>
-                                {!isApplicant ? (
-                                    <p className="body-text muted-meta mt-3 mb-0">管理员账号仅支持查看。</p>
-                                ) : null}
-                            </div>
                         </div>
-                    </div>
+                    </article>
                 );
             })}
         </div>

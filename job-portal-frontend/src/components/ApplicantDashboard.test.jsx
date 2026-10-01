@@ -127,6 +127,39 @@ describe('ApplicantDashboard', () => {
         });
     });
 
+    it('distinguishes loading, load errors, retrying, and a confirmed empty result', async () => {
+        axios.get
+            .mockRejectedValueOnce(new Error('network unavailable'))
+            .mockResolvedValueOnce({data: []});
+
+        renderWithProviders(<ApplicantDashboard/>);
+        const user = userEvent.setup();
+
+        expect(await screen.findByText('暂时无法加载岗位和投递记录，请刷新页面后重试。')).toBeInTheDocument();
+        expect(screen.queryByText('暂无可投递岗位。')).not.toBeInTheDocument();
+
+        let resolveJobs;
+        let resolveApplications;
+        axios.get
+            .mockImplementationOnce(() => new Promise((resolve) => {
+                resolveJobs = resolve;
+            }))
+            .mockImplementationOnce(() => new Promise((resolve) => {
+                resolveApplications = resolve;
+            }));
+
+        await user.click(screen.getByRole('button', {name: '重新加载'}));
+
+        expect(screen.getByRole('status')).toHaveTextContent('正在加载岗位与投递记录…');
+        expect(screen.queryByText('暂无可投递岗位。')).not.toBeInTheDocument();
+
+        resolveJobs({data: []});
+        resolveApplications({data: []});
+
+        expect(await screen.findByText('暂无可投递岗位。')).toBeInTheDocument();
+        expect(screen.queryByText('正在加载岗位与投递记录…')).not.toBeInTheDocument();
+    });
+
     it('should send apply request with bearer token', async () => {
         axios.get
             .mockResolvedValueOnce({

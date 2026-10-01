@@ -19,11 +19,13 @@ const AdminJobForm = ({
                           onCancelEdit
                       }) => {
     return (
-        <div className="card login-panel p-4">
-            <div className="card-header login-header text-center">
-                <h3 className="mb-0 login-title">{editingJobId ? "编辑岗位" : "发布新岗位"}</h3>
+        <div className="admin-form-card">
+            <div className="admin-form-header">
+                <p className="auth-form-kicker">岗位资料</p>
+                <h2 className="login-title">{editingJobId ? "编辑岗位" : "发布新岗位"}</h2>
+                <p>{editingJobId ? "修改后保存，岗位列表会同步更新。" : "填写岗位的真实名称、公司与工作内容。"}</p>
             </div>
-            <div className="card-body">
+            <div className="admin-form-body">
                 <form onSubmit={onSubmit}>
                     <div className="mb-3">
                         <label className="form-label body-text" htmlFor="job-title">岗位名称</label>

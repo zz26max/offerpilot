@@ -51,16 +51,27 @@ const Register = () => {
     };
 
     return (
-        <div className="page-shell d-flex align-items-center">
-            <div className="container">
-                <div className="row justify-content-center">
-                    <div className="col-lg-7 col-xl-6">
-                        <div className="card login-panel p-4">
-                            <div className="card-header login-header text-center">
-                                <h3 className="mb-0 login-title">注册求职者账号</h3>
-                            </div>
-
-                            <div className="card-body">
+        <main className="page-shell auth-page">
+            <div className="container auth-container">
+                <div className="login-panel">
+                    <aside className="auth-brand-panel">
+                        <div className="auth-brand-lockup">
+                            <span className="auth-brand-symbol" aria-hidden="true">O</span>
+                            <span>OfferPilot</span>
+                        </div>
+                        <div>
+                            <p className="auth-eyebrow">从第一份记录开始</p>
+                            <h1>让岗位、投递与简历<br/>保持清晰。</h1>
+                            <p>创建求职者账号，统一查看岗位机会和每次投递的最新状态。</p>
+                        </div>
+                    </aside>
+                    <section className="auth-form-panel" aria-labelledby="register-title">
+                        <div className="login-header">
+                            <p className="auth-form-kicker">创建账号</p>
+                            <h2 className="login-title" id="register-title">注册求职者账号</h2>
+                            <p className="auth-form-intro">填写以下信息即可开始使用。</p>
+                        </div>
+                        <div className="login-body">
                                 {errorMessage ? (
                                     <div className="alert alert-danger" role="alert">
                                         {errorMessage}
@@ -121,22 +132,20 @@ const Register = () => {
                                             required
                                         />
                                     </div>
-                                    <div className="text-center">
-                                        <button type="submit" className="btn btn-accent-tertiary w-75" disabled={isSubmitting}>
+                                    <div className="d-grid">
+                                        <button type="submit" className="btn btn-accent-primary" disabled={isSubmitting}>
                                             {isSubmitting ? "正在注册…" : "注册账号"}
                                         </button>
                                     </div>
                                 </form>
-                            </div>
-
-                            <div className="card-footer login-footer text-center">
-                                <small>已有账号？<Link to="/">返回登录</Link></small>
-                            </div>
                         </div>
-                    </div>
+                        <div className="login-footer">
+                            <span>已有账号？</span><Link to="/">返回登录</Link>
+                        </div>
+                    </section>
                 </div>
             </div>
-        </div>
+        </main>
     );
 };
 

@@ -65,32 +65,28 @@ const AdminJobList = ({
                           updatingJobStatusId
                       }) => {
     if (jobs.length === 0) {
-        return <p className="body-text">没有符合当前筛选条件的岗位。</p>;
+        return <div className="empty-state"><strong>没有符合当前筛选条件的岗位。</strong><span>调整搜索词或状态筛选后重试。</span></div>;
     }
 
     return (
-        <div className="row g-4">
+        <div className="admin-record-list">
             {jobs.map((job, index) => (
-                <div className="col-md-6" key={job.id ?? `${job.title}-${index}`}>
-                    <div className={`card job-card ${getJobCardStatusClass(job.status)}`}>
-                        <div className="card-body">
-                            <h4 className="heading-text">{job.title}</h4>
-                            <p className="body-text">
-                                <span className="metadata-label">岗位描述：</span>{job.description}
-                            </p>
-                            <p className="body-text">
-                                <span className="metadata-label">公司：</span>{job.company}
-                            </p>
-                            <p className="body-text muted-meta">
-                                <span className="metadata-label">发布时间：</span>{formatJobPostedAt(job)}
-                            </p>
-                            <p className="body-text">
-                                <span className="metadata-label">岗位状态：</span>{formatStatus(job.status)}
-                            </p>
-                            <p className="body-text">
-                                <span className="metadata-label">投递人数：</span>{getApplicationCount(job.id)}
-                            </p>
-                            <div className="d-flex gap-2 admin-card-actions">
+                <article className={`job-card admin-job-record ${getJobCardStatusClass(job.status)}`} key={job.id ?? `${job.title}-${index}`}>
+                    <div className="admin-record-main">
+                        <div className="admin-record-title-row">
+                            <div>
+                                <h4>{job.title}</h4>
+                                <p className="job-company"><span className="metadata-label">公司：</span>{job.company}</p>
+                            </div>
+                            <span className={`status-tag ${getJobCardStatusClass(job.status)}`}><span className="metadata-label">岗位状态：</span>{formatStatus(job.status)}</span>
+                        </div>
+                        <p className="job-description"><span className="metadata-label">岗位描述：</span>{job.description}</p>
+                        <dl className="admin-record-metadata">
+                            <div><dt>发布时间：</dt><dd>{formatJobPostedAt(job)}</dd></div>
+                            <div><dt>投递人数：</dt><dd>{getApplicationCount(job.id)}</dd></div>
+                        </dl>
+                    </div>
+                    <div className="admin-card-actions">
                                 <button
                                     type="button"
                                     className="btn btn-accent-secondary"
@@ -118,10 +114,8 @@ const AdminJobList = ({
                                 >
                                     {deletingJobId === job.id ? "正在删除…" : "删除"}
                                 </button>
-                            </div>
-                        </div>
                     </div>
-                </div>
+                </article>
             ))}
         </div>
     );

@@ -26,24 +26,18 @@ const Navbar = () => {
     }
     return (
         <>
-            <nav className="navbar navbar-expand-lg app-navbar">
-                <div className="container">
+            <nav className="navbar app-navbar" aria-label="主导航">
+                <div className="container app-navbar-inner">
                     <Link className="navbar-brand brand-mark" to="/">
-                        <strong>OfferPilot 求职管理平台</strong>
+                        <span className="brand-symbol" aria-hidden="true">O</span>
+                        <strong>OfferPilot <span className="brand-product-name">求职管理平台</span></strong>
                     </Link>
 
-                    <div className="collapse navbar-collapse" id="navbarNav">
-                        <ul className="navbar-nav ms-auto">
-                            <li className="nav-item">
-                                <span className="nav-link welcome-text body-text">你好，{user.displayName || user.username}</span>
-                            </li>
-                            <li className="nav-item">
-                                <button className="btn btn-accent-primary ms-3" onClick={handleLogout}>
-                                    退出登录
-                                </button>
-                            </li>
-
-                        </ul>
+                    <div className="navbar-user-area">
+                        <span className="welcome-text body-text">你好，{user.displayName || user.username}</span>
+                        <button className="btn btn-outline-secondary navbar-logout" onClick={handleLogout}>
+                            退出登录
+                        </button>
                     </div>
                 </div>
             </nav>

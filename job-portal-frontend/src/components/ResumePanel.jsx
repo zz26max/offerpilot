@@ -325,8 +325,8 @@ const ResumePanel = () => {
             </div>
 
             <form className="resume-upload-bar" onSubmit={uploadResume} noValidate>
+                <label className="form-label metadata-label resume-upload-label" htmlFor="resume-file">选择简历文件</label>
                 <div className="resume-file-field">
-                    <label className="form-label metadata-label" htmlFor="resume-file">选择简历文件</label>
                     <input
                         accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         className="form-control"
@@ -336,11 +336,11 @@ const ResumePanel = () => {
                         ref={fileInputRef}
                         type="file"
                     />
-                    <span className="resume-file-help">支持 PDF、DOCX，单个文件不超过 5 MiB。</span>
                 </div>
                 <button className="btn btn-accent-primary resume-upload-button" disabled={isUploading} type="submit">
                     {isUploading ? "正在上传…" : "上传简历"}
                 </button>
+                <span className="resume-file-help">支持 PDF、DOCX，单个文件不超过 5 MiB。</span>
             </form>
             <div className="resume-feedback" aria-live="polite">
                 {uploadMessage ? <p className="text-success mb-0" role="status">{uploadMessage}</p> : null}

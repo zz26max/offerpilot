@@ -178,7 +178,7 @@ const AdminApplicationsPanel = ({
             </div>
 
             {groupedApplications.length === 0 ? (
-                <p className="body-text">没有符合当前筛选条件的投递记录。</p>
+                <div className="empty-state"><strong>没有符合当前筛选条件的投递记录。</strong><span>调整搜索词或投递状态后重试。</span></div>
             ) : (
                 groupedApplications.map((group) => (
                     <div className="mb-4" key={group.status}
@@ -198,42 +198,34 @@ const AdminApplicationsPanel = ({
                             </button>
                         </div>
                         {(expandedSections[group.status] ?? false) ? (
-                            <div className="row g-4">
+                            <div className="admin-record-list application-record-list">
                                 {group.applications.map((application) => (
-                                    <div className="col-md-6" key={application.id}>
-                                        <div
-                                            className={`card application-card ${getApplicationCardStatusClass(application.status)}`}>
-                                            <div className="card-body">
-                                                <h4 className="heading-text">
-                                                    <span
-                                                        className="metadata-label">求职者：</span>{application.user?.name || "未知用户"}
-                                                </h4>
-                                                <p className="body-text">
-                                                    <span
-                                                        className="metadata-label">岗位：</span>{application.job?.title || "未知岗位"}
-                                                </p>
-                                                <p className="body-text">
-                                                    <span
-                                                        className="metadata-label">当前状态：</span>{formatStatus(application.status)}
-                                                </p>
+                                    <article
+                                        className={`application-card admin-application-record ${getApplicationCardStatusClass(application.status)}`}
+                                        key={application.id}>
+                                        <div className="admin-record-main">
+                                            <div className="admin-record-title-row">
+                                                <div>
+                                                    <h4><span className="metadata-label">求职者：</span>{application.user?.name || "未知用户"}</h4>
+                                                    <p className="job-company"><span className="metadata-label">岗位：</span>{application.job?.title || "未知岗位"}</p>
+                                                </div>
+                                                <span className={`status-tag ${getApplicationCardStatusClass(application.status)}`}>
+                                                    <span className="metadata-label">当前状态：</span>{formatStatus(application.status)}
+                                                </span>
+                                            </div>
+                                            <dl className="admin-record-metadata">
                                                 {formatApplicationTimestamp(application.createdAt) ? (
-                                                    <p className="body-text muted-meta">
-                                                        <span
-                                                            className="metadata-label">投递时间：</span>{formatApplicationTimestamp(application.createdAt)}
-                                                    </p>
+                                                    <div><dt>投递时间：</dt><dd>{formatApplicationTimestamp(application.createdAt)}</dd></div>
                                                 ) : null}
                                                 {shouldShowLastUpdated(application.createdAt, application.updatedAt) ? (
-                                                    <p className="body-text muted-meta">
-                                                        <span
-                                                            className="metadata-label">更新时间：</span>{formatApplicationTimestamp(application.updatedAt)}
-                                                    </p>
+                                                    <div><dt>更新时间：</dt><dd>{formatApplicationTimestamp(application.updatedAt)}</dd></div>
                                                 ) : null}
-                                                <div
-                                                    className="d-flex flex-column flex-md-row gap-2 align-items-md-center application-status-controls">
-                                                    <label className="body-text mb-0"
-                                                           htmlFor={`application-status-${application.id}`}>
-                                                        调整状态
-                                                    </label>
+                                            </dl>
+                                        </div>
+                                        <div className="application-status-controls">
+                                            <label className="body-text mb-0" htmlFor={`application-status-${application.id}`}>
+                                                调整状态
+                                            </label>
                                                     <select
                                                         id={`application-status-${application.id}`}
                                                         className="form-select"
@@ -254,10 +246,8 @@ const AdminApplicationsPanel = ({
                                                     >
                                                         {updatingApplicationId === application.id ? "正在保存…" : "保存"}
                                                     </button>
-                                                </div>
-                                            </div>
                                         </div>
-                                    </div>
+                                    </article>
                                 ))}
                             </div>
                         ) : null}

@@ -84,20 +84,27 @@ const Login = () => {
 
 
     return (
-        <div className="page-shell d-flex align-items-center">
-            <div className="container">
-                <div className="row justify-content-center">
-                    {/* Empty space for centering */}
-
-                    <div className="col-lg-7 col-xl-6">
-                        <div className="card login-panel p-4">
-                            {/* Header */}
-                            <div className="card-header login-header text-center">
-                                <h3 className="mb-0 login-title">登录 OfferPilot</h3>
-                            </div>
-
-                            {/* Form */}
-                            <div className="card-body">
+        <main className="page-shell auth-page">
+            <div className="container auth-container">
+                <div className="login-panel">
+                    <aside className="auth-brand-panel">
+                        <div className="auth-brand-lockup">
+                            <span className="auth-brand-symbol" aria-hidden="true">O</span>
+                            <span>OfferPilot</span>
+                        </div>
+                        <div>
+                            <p className="auth-eyebrow">求职进度，一处掌握</p>
+                            <h1>整理岗位与投递，<br/>专注每一次机会。</h1>
+                            <p>查看开放岗位、跟进投递状态，并集中管理你的简历文件。</p>
+                        </div>
+                    </aside>
+                    <section className="auth-form-panel" aria-labelledby="login-title">
+                        <div className="login-header">
+                            <p className="auth-form-kicker">欢迎回来</p>
+                            <h2 className="login-title" id="login-title">登录 OfferPilot</h2>
+                            <p className="auth-form-intro">使用账号继续管理你的求职进度。</p>
+                        </div>
+                        <div className="login-body">
                                 {errorMessage ? (
                                     <div className="alert alert-danger" role="alert">
                                         {errorMessage}
@@ -150,31 +157,26 @@ const Login = () => {
                                             required
                                         />
                                     </div>
-                                    <div className="text-center">
-                                        <button type="submit" className="btn btn-accent-tertiary w-75">登录</button>
+                                    <div className="d-grid">
+                                        <button type="submit" className="btn btn-accent-primary">登录</button>
                                     </div>
                                 </form>
-                                <hr/>
-                                <h6 className="text-center body-text">或</h6>
-                                <div className="text-center mt-3">
+                                <div className="auth-divider"><span>或</span></div>
+                                <div className="d-grid">
                                     <button
                                         onClick={() => window.location.href = `${BACKEND_API_URL}/oauth2/authorization/google`}
-                                        className="btn btn-accent-primary w-75">
+                                        className="btn btn-outline-secondary auth-google-button">
                                         使用 Google 登录
                                     </button>
-
                                 </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div className="card-footer login-footer text-center">
-                                <small>还没有账号？<Link to="/register">立即注册</Link></small>
-                            </div>
                         </div>
-                    </div>
+                        <div className="login-footer">
+                            <span>还没有账号？</span><Link to="/register">立即注册</Link>
+                        </div>
+                    </section>
                 </div>
             </div>
-        </div>
+        </main>
     );
 };
 

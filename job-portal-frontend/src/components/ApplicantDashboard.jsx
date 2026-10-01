@@ -181,6 +181,8 @@ const ApplicantDashboard = () => {
     const [submittingJobs, setSubmittingJobs] = useState({});
     const [statusMessage, setStatusMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [loadErrorMessage, setLoadErrorMessage] = useState("");
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("jobs");
     const jobsTabRef = useRef(null);
     const resumesTabRef = useRef(null);
@@ -200,6 +202,8 @@ const ApplicantDashboard = () => {
     };
 
     const loadApplicantData = useCallback(async () => {
+        setIsInitialLoading(true);
+        setLoadErrorMessage("");
         try {
             const [jobsResponse, applicationsResponse] = await Promise.all([
                 axios.get(BACKEND_API_URL + "/api/jobs"),
@@ -215,7 +219,9 @@ const ApplicantDashboard = () => {
             if (handleSessionTimeout(error)) {
                 return;
             }
-            setErrorMessage("暂时无法加载岗位和投递记录，请刷新页面后重试。");
+            setLoadErrorMessage("暂时无法加载岗位和投递记录，请刷新页面后重试。");
+        } finally {
+            setIsInitialLoading(false);
         }
     }, [handleSessionTimeout]);
 
@@ -364,12 +370,20 @@ const ApplicantDashboard = () => {
                             </span>
                         ))}
                     </div>
-                    {statusMessage ? <p className="body-text text-success">{statusMessage}</p> : null}
-                    {errorMessage ? <p className="body-text text-danger">{errorMessage}</p> : null}
-                    <div className="row g-4">
+                    {statusMessage ? <div className="alert alert-success" role="status">{statusMessage}</div> : null}
+                    {loadErrorMessage ? (
+                        <div className="alert alert-danger state-message" role="alert">
+                            <span>{loadErrorMessage}</span>
+                            <button className="btn btn-sm btn-outline-danger" onClick={loadApplicantData} type="button">重新加载</button>
+                        </div>
+                    ) : null}
+                    {errorMessage ? <div className="alert alert-danger" role="alert">{errorMessage}</div> : null}
+                    <div className="applicant-job-list">
                         {
-                            jobs.length === 0 ? (
-                                <p className="body-text">暂无可投递岗位。</p>
+                            isInitialLoading ? (
+                                <div className="empty-state" role="status">正在加载岗位与投递记录…</div>
+                            ) : !loadErrorMessage && jobs.length === 0 ? (
+                                <div className="empty-state"><strong>暂无可投递岗位。</strong><span>新的岗位发布后会显示在这里。</span></div>
                             ) : jobs.map((job, index) => (
                                 (() => {
                                     const application = getJobApplication(applicationsByJobId, job.id);
@@ -382,50 +396,37 @@ const ApplicantDashboard = () => {
                                     const cardStatusClass = getApplicantJobCardStatusClass(application?.status);
 
                                     return (
-                                        <div className="col-12 col-md-6 col-xl-4" key={index}>
-                                            <div className={`card job-card ${cardStatusClass}`}>
-                                                <div className="card-body">
-                                                    <h4 className="heading-text">{job.title}</h4>
-                                                    <p className="body-text">
-                                                        <span className="metadata-label">岗位描述：</span>{job.description}
-                                                    </p>
-                                                    <p className="body-text">
-                                                        <span className="metadata-label">公司：</span>{job.company}
-                                                    </p>
-                                                    <p className="body-text muted-meta">
-                                                        <span
-                                                            className="metadata-label">发布时间：</span>{formatApplicationTimestamp(job.createdAt || job.postedDate)}
-                                                    </p>
-                                                    <p className="body-text">
-                                                        <span
-                                                            className="metadata-label">投递状态：</span>{formatStatus(applicationsByJobId[job.id]?.status, "未投递")}
-                                                    </p>
+                                        <article className={`job-card applicant-job-record ${cardStatusClass}`} key={job.id ?? index}>
+                                            <div className="applicant-job-identity">
+                                                <h2>{job.title}</h2>
+                                                <p className="job-company"><span className="metadata-label">公司：</span>{job.company}</p>
+                                                <p className="job-description"><span className="metadata-label">岗位描述：</span>{job.description}</p>
+                                            </div>
+                                            <div className="applicant-job-status">
+                                                <span className={`status-tag ${cardStatusClass}`}>
+                                                    <span className="metadata-label">投递状态：</span>{formatStatus(applicationsByJobId[job.id]?.status, "未投递")}
+                                                </span>
+                                                <p className="status-helper">{getStatusHelperText(application?.status)}</p>
+                                                <dl className="job-timestamps">
+                                                    <div><dt>发布时间：</dt><dd>{formatApplicationTimestamp(job.createdAt || job.postedDate) || "—"}</dd></div>
                                                     {appliedOn ? (
-                                                        <p className="body-text muted-meta">
-                                                            <span className="metadata-label">投递时间：</span>{appliedOn}
-                                                        </p>
+                                                        <div><dt>投递时间：</dt><dd>{appliedOn}</dd></div>
                                                     ) : null}
                                                     {lastUpdated ? (
-                                                        <p className="body-text muted-meta">
-                                                            <span
-                                                                className="metadata-label">更新时间：</span>{lastUpdated}
-                                                        </p>
+                                                        <div><dt>更新时间：</dt><dd>{lastUpdated}</dd></div>
                                                     ) : null}
-                                                    <p className="body-text muted-meta">
-                                                        {getStatusHelperText(application?.status)}
-                                                    </p>
-                                                    <div>
-                                                        <button
-                                                            className="btn btn-accent-secondary"
-                                                            disabled={!actionAllowed || isSubmitting}
-                                                            onClick={() => canWithdraw(application) ? withdraw(job.id) : apply(job.id)}
-                                                        >
-                                                            {getActionLabel(application, isSubmitting)}
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                </dl>
                                             </div>
-                                        </div>
+                                            <div className="applicant-job-action">
+                                                <button
+                                                    className={canWithdraw(application) ? "btn btn-outline-secondary" : "btn btn-accent-primary"}
+                                                    disabled={!actionAllowed || isSubmitting}
+                                                    onClick={() => canWithdraw(application) ? withdraw(job.id) : apply(job.id)}
+                                                >
+                                                    {getActionLabel(application, isSubmitting)}
+                                                </button>
+                                            </div>
+                                        </article>
                                     );
                                 })()
                             ))
