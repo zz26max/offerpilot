@@ -10,7 +10,7 @@
 
 ### 1.1 一句话结论
 
-**功能与工程质量已达到可写进简历、可现场演示的水平；交付完整性还不够——最终 UI 改版和全部文档仍在工作区，没有提交、没有合入 `main`、没有推送，也没有线上 Demo。**
+**功能与工程质量已达到可写进简历、可现场演示的水平；2026-11 UI 改版、文档与截图已提交并合入本地 `main`。剩余交付项是远端推送与线上 Demo（本环境访问 GitHub 被代理拦截，需在本地执行推送）。**
 
 粗略评分（个人项目口径，不是生产系统）：
 
@@ -18,7 +18,7 @@
 |---|---|---|
 | 功能完整度 | 8 / 10 | 双角色主链路完整；缺分页、简历删除、个人资料、限流等 |
 | 工程质量 | 9 / 10 | 构建/测试/迁移/文档/可观测性齐全；无覆盖率门禁、E2E 未进 CI |
-| 交付完整度 | 4 / 10 | 关键改动未提交；`main` 落后；无线上地址；仓库命名/CI 镜像仍是上游 |
+| 交付完整度 | 7 / 10 | 已提交并合入本地 `main`；远端未推送、无线上地址 |
 | 面试可讲深度 | 9 / 10 | Outbox、缓存一致性、文件安全、规则匹配都有可追问细节 |
 
 ### 1.2 功能完整性（真实存在 / 真实缺失）
@@ -63,19 +63,16 @@
 | 真实运行验证 | 2026-11-18 用真实 MySQL/Redis/RabbitMQ 跑通注册登录、岗位 CRUD、投递/撤回/再投、PDF/DOCX 解析、匹配、下载、后台审核、停用会话失效 |
 | 规模事实 | 27 个 REST 业务端点；5 张业务表；7 个 Flyway 迁移；7 个 Compose 服务；14 篇 ADR（上游） |
 
-### 1.4 交付/仓库现状（投简历前必须处理）
+### 1.4 交付/仓库现状（2026-11-22 更新）
 
-当前分支 `review/comprehensive-audit-2026-10-26`：
+- 已提交 3 个提交：`114e0e3`（UI 改版）、`adfe5e2`（文档/截图）、`68d137a`（`.env.example`、`.gitignore`、CI）；`main` 已快进到 `68d137a`，本地领先 `origin/main` 5 个提交（含 2 个审计文档提交）。
+- 已添加 `.env.example`；`.workbuddy/`、`test-results/`、本地开发日记已加入 `.gitignore`。
+- CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，并新增前端 lint 步骤。
+- README 已加入界面预览、2026-11 改版说明、已知限制与相关文档；`PROJECT-BRIEF` 顶部已加时点/更新提示。
+- **远端推送未完成**：本环境通过代理访问 GitHub 返回 403；需在能访问 GitHub 的机器执行 `git push origin main`，并确认仓库为 public。
+- **仍无线上 Demo**；Google OAuth 凭据未配置；版本号仍为 `0.2.0`（未 bump）；CI 仍未跑 E2E。
 
-- `main` = `origin/main` = `9b35ff3`（**不含** 2026-11 UI 改版）。
-- 当前 HEAD `e5cd316` 比 `main` 多 2 个审计文档提交；**前端改版尚未提交**：16 个已修改文件 + 8 个新增前端文件（组件/测试/E2E/样本）+ `docs/ui-redesign/`（40 个未跟踪文件，含 36 张截图）。
-- 未跟踪的还有 `docs/PROJECT-BRIEF.md`、`docs/resume-points.md`、`.workbuddy/memory/2026-10-18.md`。
-- 仓库已有 `origin=https://github.com/zz26max/offerpilot.git`，但本环境通过代理访问 GitHub 返回 403，**无法确认仓库是否 public、是否有最新代码**。
-- CI 工作流仍把镜像命名为 `jrodolfo/job-portal-*`，且只跑后端/前端单元测试，不跑 E2E、不跑 lint。
-- 没有 `.env.example`；没有线上 Demo；`README.zh-CN.md` 已改为链接未跟踪的 `PROJECT-BRIEF.md`。
-- 版本号仍是 `0.2.0`；`docs/PROJECT-BRIEF.md` 的统计停留在 2026-10-18（18 commits / 150 files / 98 前端用例），与当前不一致。
-
-**结论：代码本身可交付，仓库交付没完成。** 在写进简历前，至少完成第七节 P0 清单。
+**结论：本地仓库已可交付；推送、public 可见性与线上 Demo 是剩余项。**
 
 ### 1.5 面试时的诚实口径
 
@@ -274,14 +271,15 @@
 
 ## 七、投递前 checklist
 
-### P0（不做完不建议投）
+### P0（本地已完成，剩远端）
 
-1. 提交 UI 改版 + `docs/ui-redesign` + 新增组件/测试 + 设计文档；写清 commit message（如 `feat(ui): redesign auth and workspaces`）。
-2. 把改动合入 `main`（当前 `main=origin/main=9b35ff3`），推送 `origin main`；确认 GitHub 仓库 public、README 能打开。
-3. 处理 `.workbuddy/memory/2026-10-18.md`（私有笔记，移出仓库或加入 `.gitignore`）。
-4. 确认 `test-results/`、`build/`、`target/` 等生成物已被忽略或删除（生成物不应进仓库）。
-5. 确认 `docs/PROJECT-BRIEF.md`、`docs/resume-points.md`、`docs/ui-redesign/screenshots` 已随提交进入仓库；否则 README 里的链接是坏的。
-6. 更新 README：项目截图（至少登录/岗位/简历/后台各一张）、演示账号、`docker compose up` 步骤、已知限制、二次开发声明。
+- [x] 提交 UI 改版、文档、截图、测试与设计文档（`114e0e3`、`adfe5e2`）。
+- [x] 本地 `main` 快进到 `68d137a`（领先 `origin/main` 5 个提交）。
+- [x] `.workbuddy/`、本地开发日记、`test-results/` 等已加入 `.gitignore`。
+- [x] README 已加入截图、2026-11 改版说明、演示账号、启动步骤、已知限制与二次开发声明。
+- [x] `PROJECT-BRIEF`、`resume-points`、UI 截图已纳入提交。
+- [ ] 在能访问 GitHub 的机器执行 `git push origin main`，并确认仓库为 public、README 图片可加载。
+- [ ] 用 GitHub 页面实际打开一次 README，检查截图与相对链接。
 
 ### P1（显著加分）
 
