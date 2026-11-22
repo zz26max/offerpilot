@@ -134,7 +134,6 @@ jobs:
       JWT_SECRET_KEY: ci-e2e-secret-key-at-least-32-bytes-long
       ALLOWED_ORIGINS: http://localhost:5173
       FRONTEND_BASE_URL: http://localhost:5173
-      RESUME_STORAGE_ROOT: ${{ runner.temp }}/resumes
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -157,6 +156,8 @@ jobs:
       run: mvn -B -ntp -f job-portal-backend/pom.xml package -DskipTests
 
     - name: Start backend
+      env:
+        RESUME_STORAGE_ROOT: ${{ runner.temp }}/resumes
       run: |
         JAR=$(ls job-portal-backend/target/jobportal-*.jar | head -n1)
         nohup java -jar "$JAR" > backend.log 2>&1 &
