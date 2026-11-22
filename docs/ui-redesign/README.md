@@ -83,6 +83,7 @@
 | `npm run lint` | 通过 |
 | `npm run build` | 通过，137 个模块；产物 `index-C_ZaR9DF.css` / `index-DqhGPruS.js` |
 | 非写库 UI 套件 `npx playwright test ui-redesign.spec.js --workers=1` | **4 项全部通过**（真实服务 + 三尺寸布局/六状态/长文本），并重新采集 32 张页面截图 |
+| CI（`main` push） | 后端测试、前端测试/lint、Docker 构建、非写库 Playwright E2E 全部通过（run `45047029290`） |
 | 完整浏览器套件 `npm run test:e2e -- --workers=1` | 上一轮 13 项通过；本轮未复跑，因为 `ui-redesign-live.spec.js` 会创建账号/岗位/简历并写入数据库 |
 | 后端 `mvn -f job-portal-backend/pom.xml test -B -ntp` | 179 项：178 通过、0 失败、0 错误，1 项因 Windows 无符号链接权限由原测试自动中止 |
 | Linux 补验 `LocalResumeStorageTest` | 3/3 全通过，0 跳过，包含上述符号链接安全用例 |

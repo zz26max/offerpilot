@@ -116,6 +116,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
+GitHub Actions 在 `main` 推送时会运行后端测试、前端测试/lint、Docker 构建，并用 runner 预装的 Chrome 执行非写库 Playwright E2E（`ui-redesign.spec.js`）。
+
 ## 缓存指标
 
 Actuator 只暴露 `health` 和 `prometheus`：健康检查允许匿名访问，Prometheus 端点要求 `ADMIN` 身份。可使用本地管理员账号查看指标：

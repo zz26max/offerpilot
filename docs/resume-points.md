@@ -60,6 +60,7 @@
 | 前端 `npm run lint` | 通过 |
 | 前端 `npm run build` | 通过（137 模块，CSS 262.48 kB / JS 441.37 kB） |
 | 非写库 UI E2E | 4 项通过（三尺寸布局、六状态、长文本），重采 32 张截图 |
+| CI（main push） | 后端测试、前端测试/lint、Docker 构建、非写库 Playwright E2E 全部通过（run `45047029290`） |
 | 真实运行验证 | 2026-11-18 用真实 MySQL/Redis/RabbitMQ 跑通注册登录、岗位 CRUD、投递/撤回/再投、PDF/DOCX 解析、匹配、下载、后台审核、停用会话失效 |
 | 规模事实 | 27 个 REST 业务端点；5 张业务表；7 个 Flyway 迁移；7 个 Compose 服务；14 篇 ADR（上游） |
 
@@ -68,8 +69,8 @@
 - 已提交并推送：`114e0e3`（UI 改版）、`adfe5e2`（文档/截图）、`68d137a`（`.env.example`、`.gitignore`、CI）、`933b7d6`（交付状态）；`origin/main` 已与本地一致。
 - 已确认 `https://github.com/zz26max/offerpilot` 返回 200，README 与 `docs/ui-redesign/screenshots/login-1440x900.png` 均可公开访问。
 - 已添加 `.env.example`；`.workbuddy/`、`test-results/`、本地开发日记已加入 `.gitignore`。
-- CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，并新增前端 lint 步骤；推送后已触发一次 GitHub Actions（以 Actions 页面最新结果为准）。
-- **仍无线上 Demo**；Google OAuth 凭据未配置（按钮默认隐藏）；版本号仍为 `0.2.0`（未 bump）；CI 已增加非写库 E2E job，完整 live 套件仍只在本地跑。
+- CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，新增前端 lint 与非写库 Playwright E2E job；run `45047029290` 已通过。
+- **仍无线上 Demo**；Google OAuth 凭据未配置（按钮默认隐藏）；版本号仍为 `0.2.0`（未 bump）；完整 live 套件仍只在本地跑。
 
 **结论：仓库已可交付、可公开访问；线上 Demo 与 OAuth 凭据是剩余项。**
 
@@ -278,7 +279,7 @@
 - [x] README 已加入截图、2026-11 改版说明、演示账号、启动步骤、已知限制与二次开发声明。
 - [x] `PROJECT-BRIEF`、`resume-points`、UI 截图已纳入提交。
 - [x] 已确认 GitHub 仓库 public，README 与截图可通过 raw 地址访问。
-- [ ] 在 Actions 页面确认最新 CI 结果（推送后已触发）。
+- [x] CI run `45047029290` 通过（后端/前端/lint/Docker 构建 + 非写库 E2E）。
 
 ### P1（显著加分）
 
