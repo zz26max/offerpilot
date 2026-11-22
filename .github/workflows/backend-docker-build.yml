@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      BACKEND_IMAGE_NAME: jrodolfo/job-portal-backend
-      FRONTEND_IMAGE_NAME: jrodolfo/job-portal-frontend
+      BACKEND_IMAGE_NAME: ${{ github.repository_owner }}/offerpilot-backend
+      FRONTEND_IMAGE_NAME: ${{ github.repository_owner }}/offerpilot-frontend
       IMAGE_TAG: ${{ github.sha }}
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -44,6 +44,10 @@ jobs:
     - name: Run Frontend Tests
       working-directory: job-portal-frontend
       run: npm test
+
+    - name: Lint Frontend
+      working-directory: job-portal-frontend
+      run: npm run lint
 
     - name: Build Backend JAR
       run: mvn -f job-portal-backend/pom.xml clean package -DskipTests
