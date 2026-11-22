@@ -79,7 +79,7 @@
 
 | 检查 | 结果 |
 | --- | --- |
-| 前端单元/组件/集成测试 `npm test` | **16 个文件，106 项全部通过**（复核修正后） |
+| 前端单元/组件/集成测试 `npm test` | **16 个文件，107 项全部通过**（复核修正后） |
 | `npm run lint` | 通过 |
 | `npm run build` | 通过，137 个模块；产物 `index-C_ZaR9DF.css` / `index-DqhGPruS.js` |
 | 非写库 UI 套件 `npx playwright test ui-redesign.spec.js --workers=1` | **4 项全部通过**（真实服务 + 三尺寸布局/六状态/长文本），并重新采集 32 张页面截图 |
@@ -133,6 +133,6 @@
 - 后台页签补齐 roving tabindex 与 Arrow/Home/End 键盘导航；求职者简历页签的 `aria-controls` 目标始终存在（面板懒加载内容）。
 - 状态色恢复可区分语义：已投递柔蓝、筛选中棕黄、已录用柔绿、未通过柔红、已撤回灰、未投递空心中性点。
 - 登录页移除演示账号提示，补充 Google 登录失败提示与提交中禁用状态。
-- 同步更新 `DESIGN.md`、单元测试（103→106）、两个 Playwright 规格与 32 张页面截图（`resume-details-*` 4 张保持上一轮真实解析实拍）。
+- 同步更新 `DESIGN.md`、单元测试（103→107）、两个 Playwright 规格与 32 张页面截图（`resume-details-*` 4 张保持上一轮真实解析实拍）。
 
 本轮未改后端、数据库结构、API、路由或依赖；未复跑会写库的 `ui-redesign-live.spec.js`，其余验证见上表。

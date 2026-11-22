@@ -31,7 +31,7 @@
 - 管理员：岗位创建/编辑/关闭/重开/删除；投递按状态分组、搜索/筛选/排序、修改状态；用户列表、启用/停用求职者。
 - 基础设施：Redis 岗位缓存 + fail-open、Micrometer 指标、OTel/Jaeger、Swagger、Flyway 迁移、Docker Compose 七服务。
 - 前端：React 19 双工作台；2026-11 完成认证页/工作台/后台视觉改版，320–1920 响应式、键盘页签、用户菜单、密码显隐、自定义文件选择、可见焦点。
-- 测试：后端 31 个测试类 / 179 个用例（0 失败，1 个 Windows 符号链接用例跳过）；前端 16 文件 / 106 用例；Playwright 6 个规格 / 10 条用例。
+- 测试：后端 31 个测试类 / 179 个用例（0 失败，1 个 Windows 符号链接用例跳过）；前端 16 文件 / 107 用例；Playwright 6 个规格 / 10 条用例。
 
 **部分实现/有前提**
 
@@ -56,7 +56,7 @@
 | 检查 | 结果 |
 |---|---|
 | 后端 `mvn -o test` | 32 份报告 / 179 用例 / 0 失败 / 0 错误 / 1 跳过（Windows 符号链接权限，Linux 已补验 3/3） |
-| 前端 `npm test` | 16 文件 / 106 用例全部通过 |
+| 前端 `npm test` | 16 文件 / 107 用例全部通过 |
 | 前端 `npm run lint` | 通过 |
 | 前端 `npm run build` | 通过（137 模块，CSS 262.48 kB / JS 441.37 kB） |
 | 非写库 UI E2E | 4 项通过（三尺寸布局、六状态、长文本），重采 32 张截图 |
@@ -106,13 +106,13 @@
 2. 用 Transactional Outbox 解决「文件已落盘、数据库已提交、消息未发送」的双写不一致；publisher confirm + 租约 + 消费幂等 + DLQ，Broker 故障不阻塞启动。
 3. 为三处热点读加 Redis 缓存与 fail-open；用 Micrometer 暴露 hit/miss 与降级计数，标签只用有限枚举，避免指标基数爆炸。
 4. 加固上传与权限边界：结构校验、zip bomb 限制、原子落盘、越权 404、OIDC→应用 JWT、方法级角色授权。
-5. 用 Flyway 管理 7 个迁移、`ddl-auto=validate` 锁 schema；测试总量后端 179 / 前端 106 / E2E 10 条。
+5. 用 Flyway 管理 7 个迁移、`ddl-auto=validate` 锁 schema；测试总量后端 179 / 前端 107 / E2E 10 条。
 
 ### 2.5 全栈/前端实习版（3 条）
 
 1. 使用 React 19 + Redux Toolkit + React Router 7 完成求职者/管理员双工作台，封装 `ProtectedRoute` 恢复角色、401 统一清理会话、简历轮询与请求去重。
 2. 2026-11 完成全站视觉改版：抽出 `AuthBrand` / `AuthInput` / `Icon` 共享组件，统一色彩/圆角/控件高度；实现 320–1920 响应式、2×2 后台页签、键盘可操作的用户菜单与页签、自定义文件选择、可见焦点与 `prefers-reduced-motion`。
-3. 用 Vitest + Testing Library + MSW 覆盖 106 个用例，Playwright 覆盖 10 条真实浏览器流程；在 1440/390/1920 三尺寸下校验无横向溢出、控件 ≥44px。
+3. 用 Vitest + Testing Library + MSW 覆盖 107 个用例，Playwright 覆盖 10 条真实浏览器流程；在 1440/390/1920 三尺寸下校验无横向溢出、控件 ≥44px。
 
 ### 2.6 技术栈一行版
 
@@ -126,7 +126,7 @@
 | 单轮 P95 降幅 | −13.10% ~ −26.39% | 同上；吞吐/P50/P99 方向不稳定，不写 |
 | Repository 回源 | 1,000 → 0 | 计时阶段 |
 | 后端测试 | 179 用例（178 通过，1 跳过） | 31 个测试类；Windows 符号链接限制 |
-| 前端测试 | 106 用例 | 16 文件；Vitest + Testing Library + MSW |
+| 前端测试 | 107 用例 | 16 文件；Vitest + Testing Library + MSW |
 | E2E | 10 条用例 / 6 规格 | Playwright；非写库 4 条已进 CI，其余本地运行 |
 | 业务端点/表/迁移 | 27 / 5 / 7 | 代码统计 |
 | 规模（committed） | 20 commits / 152 文件 / +10,093 −2,258 | `559928f..HEAD`；**不含未提交 UI 改版**，简历不必写 |
