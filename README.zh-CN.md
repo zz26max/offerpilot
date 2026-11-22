@@ -1,5 +1,10 @@
 # OfferPilot 求职管理平台
 
+[![CI](https://github.com/zz26max/offerpilot/actions/workflows/backend-docker-build.yml/badge.svg)](https://github.com/zz26max/offerpilot/actions/workflows/backend-docker-build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+仓库：https://github.com/zz26max/offerpilot
+
 OfferPilot 是面向求职者与招聘管理员的全栈求职管理平台。当前后端提供岗位浏览、投递跟踪、后台管理、简历文件管理与异步文本解析，以及 Redis 岗位查询缓存和基础可观测性；前端已完成双角色工作台与 320–1920 响应式改版（2026-11）。
 
 > 本项目基于 [jrodolfo/job-portal](https://github.com/jrodolfo/job-portal) 的 `main` 分支进行二次开发，上游引入版本与开发原则见 [UPSTREAM.md](./UPSTREAM.md)。上游代码遵循 [MIT License](./LICENSE)，原作者版权与许可证声明均予以保留。本项目只将实际新增、重构和验证过的内容作为二次开发成果。
