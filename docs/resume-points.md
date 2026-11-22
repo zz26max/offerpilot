@@ -10,7 +10,7 @@
 
 ### 1.1 一句话结论
 
-**功能与工程质量已达到可写进简历、可现场演示的水平；2026-11 UI 改版、文档与截图已提交并合入本地 `main`。剩余交付项是远端推送与线上 Demo（本环境访问 GitHub 被代理拦截，需在本地执行推送）。**
+**功能与工程质量已达到可写进简历、可现场演示的水平；2026-11 UI 改版、文档与截图已提交并推送到 `main`。剩余交付项是线上 Demo 与 Google OAuth 真实凭据（GitHub 仓库已确认 public，README 截图可正常加载）。**
 
 粗略评分（个人项目口径，不是生产系统）：
 
@@ -18,7 +18,7 @@
 |---|---|---|
 | 功能完整度 | 8 / 10 | 双角色主链路完整；缺分页、简历删除、个人资料、限流等 |
 | 工程质量 | 9 / 10 | 构建/测试/迁移/文档/可观测性齐全；无覆盖率门禁、E2E 未进 CI |
-| 交付完整度 | 7 / 10 | 已提交并合入本地 `main`；远端未推送、无线上地址 |
+| 交付完整度 | 8 / 10 | 已提交、推送并确认 public；仍无线上地址 |
 | 面试可讲深度 | 9 / 10 | Outbox、缓存一致性、文件安全、规则匹配都有可追问细节 |
 
 ### 1.2 功能完整性（真实存在 / 真实缺失）
@@ -65,14 +65,13 @@
 
 ### 1.4 交付/仓库现状（2026-11-22 更新）
 
-- 已提交 3 个提交：`114e0e3`（UI 改版）、`adfe5e2`（文档/截图）、`68d137a`（`.env.example`、`.gitignore`、CI）；`main` 已快进到 `68d137a`，本地领先 `origin/main` 5 个提交（含 2 个审计文档提交）。
+- 已提交并推送：`114e0e3`（UI 改版）、`adfe5e2`（文档/截图）、`68d137a`（`.env.example`、`.gitignore`、CI）、`933b7d6`（交付状态）；`origin/main` 已与本地一致。
+- 已确认 `https://github.com/zz26max/offerpilot` 返回 200，README 与 `docs/ui-redesign/screenshots/login-1440x900.png` 均可公开访问。
 - 已添加 `.env.example`；`.workbuddy/`、`test-results/`、本地开发日记已加入 `.gitignore`。
-- CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，并新增前端 lint 步骤。
-- README 已加入界面预览、2026-11 改版说明、已知限制与相关文档；`PROJECT-BRIEF` 顶部已加时点/更新提示。
-- **远端推送未完成**：本环境通过代理访问 GitHub 返回 403；需在能访问 GitHub 的机器执行 `git push origin main`，并确认仓库为 public。
+- CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，并新增前端 lint 步骤；推送后已触发一次 GitHub Actions（以 Actions 页面最新结果为准）。
 - **仍无线上 Demo**；Google OAuth 凭据未配置；版本号仍为 `0.2.0`（未 bump）；CI 仍未跑 E2E。
 
-**结论：本地仓库已可交付；推送、public 可见性与线上 Demo 是剩余项。**
+**结论：仓库已可交付、可公开访问；线上 Demo 与 OAuth 凭据是剩余项。**
 
 ### 1.5 面试时的诚实口径
 
@@ -271,15 +270,15 @@
 
 ## 七、投递前 checklist
 
-### P0（本地已完成，剩远端）
+### P0（已完成）
 
 - [x] 提交 UI 改版、文档、截图、测试与设计文档（`114e0e3`、`adfe5e2`）。
-- [x] 本地 `main` 快进到 `68d137a`（领先 `origin/main` 5 个提交）。
+- [x] `main` 快进并推送 `origin/main`（`933b7d6`），本地与远端一致。
 - [x] `.workbuddy/`、本地开发日记、`test-results/` 等已加入 `.gitignore`。
 - [x] README 已加入截图、2026-11 改版说明、演示账号、启动步骤、已知限制与二次开发声明。
 - [x] `PROJECT-BRIEF`、`resume-points`、UI 截图已纳入提交。
-- [ ] 在能访问 GitHub 的机器执行 `git push origin main`，并确认仓库为 public、README 图片可加载。
-- [ ] 用 GitHub 页面实际打开一次 README，检查截图与相对链接。
+- [x] 已确认 GitHub 仓库 public，README 与截图可通过 raw 地址访问。
+- [ ] 在 Actions 页面确认最新 CI 结果（推送后已触发）。
 
 ### P1（显著加分）
 
