@@ -1,3 +1,5 @@
+import AuthBrand from "./AuthBrand";
+import AuthInput from "./AuthInput";
 //src/components/Login.jsx
 
 import axios from "axios";
@@ -26,14 +28,21 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const location = useLocation();
     const registrationMessage = location.state?.registrationMessage || "";
     const sessionMessage = location.state?.sessionMessage || "";
+    const oauthError = new URLSearchParams(location.search).get("oauth_error") === "true";
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const processLogin = async () => {
+        if (isSubmitting) {
+            return;
+        }
+
         setErrorMessage("");
+        setIsSubmitting(true);
 
         try {
             const response = await axios.post(BACKEND_API_URL + '/api/auth/login', {},
@@ -79,6 +88,8 @@ const Login = () => {
         } catch (error) {
             localStorage.removeItem('token');
             setErrorMessage(getLoginErrorMessage(error))
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -87,21 +98,10 @@ const Login = () => {
         <main className="page-shell auth-page">
             <div className="container auth-container">
                 <div className="login-panel">
-                    <aside className="auth-brand-panel">
-                        <div className="auth-brand-lockup">
-                            <span className="auth-brand-symbol" aria-hidden="true">O</span>
-                            <span>OfferPilot</span>
-                        </div>
-                        <div>
-                            <p className="auth-eyebrow">求职进度，一处掌握</p>
-                            <h1>整理岗位与投递，<br/>专注每一次机会。</h1>
-                            <p>查看开放岗位、跟进投递状态，并集中管理你的简历文件。</p>
-                        </div>
-                    </aside>
+                    <AuthBrand/>
                     <section className="auth-form-panel" aria-labelledby="login-title">
                         <div className="login-header">
-                            <p className="auth-form-kicker">欢迎回来</p>
-                            <h2 className="login-title" id="login-title">登录 OfferPilot</h2>
+                            <h1 className="login-title" id="login-title">登录 OfferPilot</h1>
                             <p className="auth-form-intro">使用账号继续管理你的求职进度。</p>
                         </div>
                         <div className="login-body">
@@ -120,6 +120,11 @@ const Login = () => {
                                         {sessionMessage}
                                     </div>
                                 ) : null}
+                                {oauthError && !errorMessage ? (
+                                    <div className="alert alert-warning" role="status">
+                                        Google 登录未完成，请重试或使用邮箱和密码登录。
+                                    </div>
+                                ) : null}
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
                                     processLogin()
@@ -128,7 +133,8 @@ const Login = () => {
                                         <label className="form-label body-text" htmlFor="login-account-name">
                                             邮箱
                                         </label>
-                                        <input
+                                        <AuthInput
+                                            icon="mail"
                                             id="login-account-name"
                                             type="email"
                                             className="form-control"
@@ -138,15 +144,13 @@ const Login = () => {
                                             onChange={(e) => setEmail(e.target.value)}
                                             required
                                         />
-                                        <div className="form-text body-text">
-                                            可使用演示账号：admin@local.test 或 user@local.test。
-                                        </div>
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="login-password">
                                             密码
                                         </label>
-                                        <input
+                                        <AuthInput
+                                            icon="lock"
                                             id="login-password"
                                             type="password"
                                             className="form-control"
@@ -158,7 +162,9 @@ const Login = () => {
                                         />
                                     </div>
                                     <div className="d-grid">
-                                        <button type="submit" className="btn btn-accent-primary">登录</button>
+                                        <button type="submit" className="btn btn-accent-primary" disabled={isSubmitting}>
+                                            {isSubmitting ? "正在登录…" : "登录"}
+                                        </button>
                                     </div>
                                 </form>
                                 <div className="auth-divider"><span>或</span></div>

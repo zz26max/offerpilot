@@ -211,6 +211,33 @@ describe("AdminDashboard", () => {
         expect(screen.getByLabelText("投递状态图例")).toHaveTextContent("已撤回");
     });
 
+    it("should move focus and selection between admin tabs with the keyboard", async () => {
+        localStorage.setItem("token", "jwt-admin");
+        axios.get
+            .mockResolvedValueOnce({data: []})
+            .mockResolvedValueOnce({data: []})
+            .mockResolvedValueOnce({data: []});
+
+        renderWithProviders(<AdminDashboard/>);
+        const user = userEvent.setup();
+        const jobsTab = screen.getByRole("tab", {name: tabNamePattern("岗位管理")});
+        const addTab = screen.getByRole("tab", {name: "发布岗位"});
+        const usersTab = screen.getByRole("tab", {name: tabNamePattern("用户管理")});
+
+        jobsTab.focus();
+        await user.keyboard("{ArrowRight}");
+        await waitFor(() => expect(addTab).toHaveFocus());
+        expect(addTab).toHaveAttribute("aria-selected", "true");
+
+        await user.keyboard("{End}");
+        await waitFor(() => expect(usersTab).toHaveFocus());
+        expect(usersTab).toHaveAttribute("aria-selected", "true");
+
+        await user.keyboard("{Home}");
+        await waitFor(() => expect(jobsTab).toHaveFocus());
+        expect(jobsTab).toHaveAttribute("aria-selected", "true");
+    });
+
     it("should show admin users as read-only and applicant users as enable-disable only", async () => {
         localStorage.setItem("token", "jwt-admin");
         axios.get

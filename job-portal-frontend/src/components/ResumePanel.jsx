@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import axios from "axios";
 import {useSessionTimeout} from "../auth/session";
@@ -325,22 +326,24 @@ const ResumePanel = () => {
             </div>
 
             <form className="resume-upload-bar" onSubmit={uploadResume} noValidate>
-                <label className="form-label metadata-label resume-upload-label" htmlFor="resume-file">选择简历文件</label>
                 <div className="resume-file-field">
                     <input
                         accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        className="form-control"
+                        aria-describedby="resume-file-help"
+                        className="resume-file-input"
                         disabled={isUploading}
                         id="resume-file"
                         onChange={handleFileChange}
                         ref={fileInputRef}
                         type="file"
                     />
+                    <label className="btn btn-outline-secondary resume-file-trigger" htmlFor="resume-file"><Icon name="upload"/>选择简历文件</label>
+                    <span className="resume-file-name">{selectedFile ? selectedFile.name : "未选择文件"}</span>
                 </div>
                 <button className="btn btn-accent-primary resume-upload-button" disabled={isUploading} type="submit">
                     {isUploading ? "正在上传…" : "上传简历"}
                 </button>
-                <span className="resume-file-help">支持 PDF、DOCX，单个文件不超过 5 MiB。</span>
+                <span className="resume-file-help" id="resume-file-help">支持 PDF、DOCX，单个文件不超过 5 MiB。</span>
             </form>
             <div className="resume-feedback" aria-live="polite">
                 {uploadMessage ? <p className="text-success mb-0" role="status">{uploadMessage}</p> : null}

@@ -180,6 +180,7 @@ const AdminDashboard = () => {
     const [errorMessage, setErrorMessage] = useState("");
     const disableModalCancelRef = useRef(null);
     const disableReturnFocusRef = useRef(null);
+    const adminTabRefs = useRef({});
 
     useEffect(() => {
         if (!pendingDisableUser) {
@@ -253,6 +254,31 @@ const AdminDashboard = () => {
         }
 
         return tab.label;
+    };
+
+    const selectAdminTab = (tabId) => {
+        setActiveTab(tabId);
+        requestAnimationFrame(() => adminTabRefs.current[tabId]?.focus());
+    };
+
+    const handleAdminTabKeyDown = (event, index) => {
+        const lastIndex = adminTabs.length - 1;
+        let nextIndex;
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+            nextIndex = index === lastIndex ? 0 : index + 1;
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+            nextIndex = index === 0 ? lastIndex : index - 1;
+        } else if (event.key === "Home") {
+            nextIndex = 0;
+        } else if (event.key === "End") {
+            nextIndex = lastIndex;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        selectAdminTab(adminTabs[nextIndex].id);
     };
 
     const visibleJobs = jobs
@@ -625,16 +651,21 @@ const AdminDashboard = () => {
 
                 <div className="mb-4">
                     <div className="nav nav-tabs admin-tabs" role="tablist" aria-label="管理功能">
-                        {adminTabs.map((tab) => (
+                        {adminTabs.map((tab, index) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 role="tab"
+                                ref={(element) => {
+                                    adminTabRefs.current[tab.id] = element;
+                                }}
+                                tabIndex={activeTab === tab.id ? 0 : -1}
                                 className={`nav-link ${activeTab === tab.id ? "active" : ""}`}
                                 aria-selected={activeTab === tab.id}
                                 aria-controls={`admin-tab-panel-${tab.id}`}
                                 id={`admin-tab-${tab.id}`}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => selectAdminTab(tab.id)}
+                                onKeyDown={(event) => handleAdminTabKeyDown(event, index)}
                             >
                                 {getTabLabel(tab)}
                             </button>

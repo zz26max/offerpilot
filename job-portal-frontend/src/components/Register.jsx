@@ -1,3 +1,5 @@
+import AuthBrand from "./AuthBrand";
+import AuthInput from "./AuthInput";
 import axios from "axios";
 import {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
@@ -54,22 +56,11 @@ const Register = () => {
         <main className="page-shell auth-page">
             <div className="container auth-container">
                 <div className="login-panel">
-                    <aside className="auth-brand-panel">
-                        <div className="auth-brand-lockup">
-                            <span className="auth-brand-symbol" aria-hidden="true">O</span>
-                            <span>OfferPilot</span>
-                        </div>
-                        <div>
-                            <p className="auth-eyebrow">从第一份记录开始</p>
-                            <h1>让岗位、投递与简历<br/>保持清晰。</h1>
-                            <p>创建求职者账号，统一查看岗位机会和每次投递的最新状态。</p>
-                        </div>
-                    </aside>
+                    <AuthBrand/>
                     <section className="auth-form-panel" aria-labelledby="register-title">
                         <div className="login-header">
-                            <p className="auth-form-kicker">创建账号</p>
-                            <h2 className="login-title" id="register-title">注册求职者账号</h2>
-                            <p className="auth-form-intro">填写以下信息即可开始使用。</p>
+                            <h1 className="login-title" id="register-title">注册求职者账号</h1>
+                            <p className="auth-form-intro">创建一个新账号，开始你的求职之旅</p>
                         </div>
                         <div className="login-body">
                                 {errorMessage ? (
@@ -83,7 +74,9 @@ const Register = () => {
                                 }}>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="register-name">姓名</label>
-                                        <input
+                                        <AuthInput
+                                            icon="user"
+                                            placeholder="请输入姓名"
                                             id="register-name"
                                             name="name"
                                             className="form-control"
@@ -95,7 +88,9 @@ const Register = () => {
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="register-email">邮箱</label>
-                                        <input
+                                        <AuthInput
+                                            icon="mail"
+                                            placeholder="请输入邮箱"
                                             id="register-email"
                                             name="email"
                                             type="email"
@@ -108,7 +103,9 @@ const Register = () => {
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="register-password">密码</label>
-                                        <input
+                                        <AuthInput
+                                            icon="lock"
+                                            placeholder="请输入密码"
                                             id="register-password"
                                             name="password"
                                             type="password"
@@ -121,7 +118,9 @@ const Register = () => {
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label body-text" htmlFor="register-confirm-password">确认密码</label>
-                                        <input
+                                        <AuthInput
+                                            icon="lock"
+                                            placeholder="请再次输入密码"
                                             id="register-confirm-password"
                                             name="confirmPassword"
                                             type="password"

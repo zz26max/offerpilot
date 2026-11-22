@@ -1,4 +1,7 @@
 :root {
+    --control-height: 44px;
+    --radius-control: 8px;
+    --radius-panel: 12px;
     --surface-page: #f4f6f5;
     --surface-primary: #ffffff;
     --surface-subtle: #f8faf9;
@@ -8,9 +11,9 @@
     --text-muted: #6b7774;
     --border-subtle: #dce3e1;
     --border-strong: #becac7;
-    --border-control: #899894;
+    --border-control: #7c8b86;
     --action-primary: #176b64;
-    --action-primary-hover: #115a54;
+    --action-primary-hover: #105b55;
     --action-primary-soft: #e2f0ed;
     --status-info: #255f8d;
     --status-info-soft: #e9f2f8;

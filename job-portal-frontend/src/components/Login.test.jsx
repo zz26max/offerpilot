@@ -30,7 +30,7 @@ describe('Login', () => {
         const {store} = renderWithProviders(<Login/>);
         const user = userEvent.setup();
 
-        expect(screen.getByText('可使用演示账号：admin@local.test 或 user@local.test。')).toBeInTheDocument();
+        expect(screen.queryByText('可使用演示账号：admin@local.test 或 user@local.test。')).not.toBeInTheDocument();
         expect(screen.getByRole('link', {name: '立即注册'})).toHaveAttribute('href', '/register');
 
         await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
@@ -158,6 +158,33 @@ describe('Login', () => {
             displayName: '',
             role: ''
         });
+    });
+
+    it('should show a warning when Google login returns an error', () => {
+        renderWithProviders(<Login/>, {route: '/?oauth_error=true'});
+
+        expect(screen.getByRole('status')).toHaveTextContent('Google 登录未完成，请重试或使用邮箱和密码登录。');
+    });
+
+    it('should disable the submit button while the login request is pending', async () => {
+        let resolveLogin;
+        axios.post.mockImplementationOnce(() => new Promise((resolve) => {
+            resolveLogin = resolve;
+        }));
+
+        renderWithProviders(<Login/>);
+        const user = userEvent.setup();
+        await user.type(screen.getByLabelText('邮箱'), 'alice@example.com');
+        await user.type(screen.getByLabelText('密码'), 'secret');
+        await user.click(screen.getByRole('button', {name: '登录'}));
+
+        expect(screen.getByRole('button', {name: '正在登录…'})).toBeDisabled();
+
+        resolveLogin({data: {token: 'jwt-123'}});
+        axios.get.mockResolvedValueOnce({
+            data: {roles: ['ROLE_APPLICANT'], username: 'alice@example.com', displayName: 'Alice Smith'}
+        });
+        await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/applicant-dashboard'));
     });
 
     it('should redirect to Google OAuth endpoint when Google button is clicked', async () => {

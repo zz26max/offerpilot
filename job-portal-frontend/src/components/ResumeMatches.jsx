@@ -33,7 +33,7 @@ const ResumeMatches = ({data, error, isLoading, onRefresh, onRetry}) => {
             <div className="resume-match-heading">
                 <div>
                     <h5>开放岗位技能覆盖</h5>
-                    <p>基于有限技术词典的规则结果，不代表招聘结论或 AI 评估。</p>
+                    <p>基于 23 个有限技术关键词的技能覆盖率，不代表招聘结论或 AI 评估。</p>
                 </div>
                 <button
                     className="btn btn-sm btn-outline-secondary"

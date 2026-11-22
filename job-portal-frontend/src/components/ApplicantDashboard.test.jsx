@@ -1,4 +1,4 @@
-import {screen, waitFor} from '@testing-library/react';
+import {act, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import ApplicantDashboard from './ApplicantDashboard';
@@ -484,4 +484,45 @@ describe('ApplicantDashboard', () => {
         expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-rejected');
         expect(screen.getByText('本次投递暂未通过。')).toBeInTheDocument();
     });
+    it.each([
+        {action: '立即投递', method: 'post', initialStatus: null, resultStatus: 'APPLIED', expectedAction: '撤回投递'},
+        {action: '撤回投递', method: 'put', initialStatus: 'APPLIED', resultStatus: 'WITHDRAWN', expectedAction: '再次投递'}
+    ])('blocks refresh during $action and resumes API synchronization afterward', async ({action, method, initialStatus, resultStatus, expectedAction}) => {
+        const job = {id: 1, title: 'Java Developer', company: 'ACME', description: 'Build APIs'};
+        const application = {id: 50, job: {id: 1}, status: initialStatus};
+        axios.get
+            .mockResolvedValueOnce({data: [job]})
+            .mockResolvedValueOnce({data: initialStatus ? [application] : []});
+        let resolveSubmission;
+        axios[method].mockImplementationOnce(() => new Promise((resolve) => {
+            resolveSubmission = resolve;
+        }));
+        renderWithProviders(<ApplicantDashboard/>);
+        const user = userEvent.setup();
+        await user.click(await screen.findByRole('button', {name: action}));
+
+        const refresh = screen.getByRole('button', {name: '刷新'});
+        expect(refresh).toBeDisabled();
+        await user.click(refresh);
+        expect(axios.get).toHaveBeenCalledTimes(2);
+        expect(axios[method]).toHaveBeenCalledTimes(1);
+
+        await act(async () => resolveSubmission({data: {...application, status: resultStatus}}));
+        expect(refresh).toBeEnabled();
+        expect(screen.getByRole('button', {name: expectedAction})).toBeEnabled();
+        expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card'))
+            .toHaveClass(resultStatus === 'APPLIED' ? 'application-card-applied' : 'application-card-withdrawn');
+        expect(axios.get).toHaveBeenCalledTimes(2);
+
+        axios.get
+            .mockResolvedValueOnce({data: [job]})
+            .mockResolvedValueOnce({data: [{...application, status: 'REVIEWING'}]});
+        await user.click(refresh);
+        expect(await screen.findByText(byTextContent('投递状态：筛选中'))).toBeInTheDocument();
+        expect(screen.queryByRole('button', {name: '筛选中'})).not.toBeInTheDocument();
+        expect(screen.getByText(byTextContent('Java Developer')).closest('.job-card')).toHaveClass('application-card-reviewing');
+        expect(axios.get).toHaveBeenCalledTimes(4);
+        expect(refresh).toBeEnabled();
+    });
+
 });

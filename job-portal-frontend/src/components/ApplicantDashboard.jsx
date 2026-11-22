@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import {useCallback, useEffect, useRef, useState} from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
@@ -186,6 +187,9 @@ const ApplicantDashboard = () => {
     const [activeTab, setActiveTab] = useState("jobs");
     const jobsTabRef = useRef(null);
     const resumesTabRef = useRef(null);
+    const loadInFlightRef = useRef(false);
+    const submittingJobsRef = useRef(new Set());
+    const hasSubmittingJobs = Object.keys(submittingJobs).length > 0;
 
     const selectAdjacentTab = (event) => {
         let nextTab;
@@ -202,6 +206,11 @@ const ApplicantDashboard = () => {
     };
 
     const loadApplicantData = useCallback(async () => {
+        // Keep refreshes and mutations mutually exclusive, including before React re-renders.
+        if (loadInFlightRef.current || submittingJobsRef.current.size > 0) {
+            return;
+        }
+        loadInFlightRef.current = true;
         setIsInitialLoading(true);
         setLoadErrorMessage("");
         try {
@@ -221,6 +230,7 @@ const ApplicantDashboard = () => {
             }
             setLoadErrorMessage("暂时无法加载岗位和投递记录，请刷新页面后重试。");
         } finally {
+            loadInFlightRef.current = false;
             setIsInitialLoading(false);
         }
     }, [handleSessionTimeout]);
@@ -231,12 +241,13 @@ const ApplicantDashboard = () => {
 
     const apply = async (jobId) => {
         const application = getJobApplication(applicationsByJobId, jobId);
-        if (submittingJobs[jobId] || !canApply(application)) {
+        if (loadInFlightRef.current || submittingJobsRef.current.has(jobId) || !canApply(application)) {
             return;
         }
 
         setStatusMessage("");
         setErrorMessage("");
+        submittingJobsRef.current.add(jobId);
         setSubmittingJobs((prev) => ({...prev, [jobId]: true}));
         try {
             const response = await axios.post(BACKEND_API_URL + "/api/applications/" + jobId,
@@ -264,6 +275,7 @@ const ApplicantDashboard = () => {
                 "暂时无法投递，请稍后重试。"
             ));
         } finally {
+            submittingJobsRef.current.delete(jobId);
             setSubmittingJobs((prev) => {
                 const next = {...prev};
                 delete next[jobId];
@@ -274,12 +286,13 @@ const ApplicantDashboard = () => {
 
     const withdraw = async (jobId) => {
         const application = getJobApplication(applicationsByJobId, jobId);
-        if (submittingJobs[jobId] || !canWithdraw(application)) {
+        if (loadInFlightRef.current || submittingJobsRef.current.has(jobId) || !canWithdraw(application)) {
             return;
         }
 
         setStatusMessage("");
         setErrorMessage("");
+        submittingJobsRef.current.add(jobId);
         setSubmittingJobs((prev) => ({...prev, [jobId]: true}));
         try {
             const response = await axios.put(
@@ -312,6 +325,7 @@ const ApplicantDashboard = () => {
                 "暂时无法撤回投递，请稍后重试。"
             ));
         } finally {
+            submittingJobsRef.current.delete(jobId);
             setSubmittingJobs((prev) => {
                 const next = {...prev};
                 delete next[jobId];
@@ -324,7 +338,14 @@ const ApplicantDashboard = () => {
         <>
             <Navbar/>
             <div className="container dashboard-shell">
-                <h1 className="section-title">我的求职看板</h1>
+                <header className="applicant-welcome">
+                    <div><h1>欢迎来到 OfferPilot</h1><p>发现更多机会，开启你的职业新篇章</p></div>
+                    <svg className="welcome-art" viewBox="0 0 380 180" fill="none" aria-hidden="true">
+                        <circle cx="240" cy="130" r="125" fill="#c7e9e4"/><circle cx="240" cy="130" r="83" fill="#b5e0d9"/>
+                        <rect x="85" y="72" width="165" height="112" rx="12" fill="#21877f"/><path d="M132 72V53q0-12 12-12h37q12 0 12 12v19" stroke="#176b64" strokeWidth="10"/><path d="M85 110q80 30 165 0" stroke="#176b64" strokeWidth="5"/><rect x="153" y="112" width="24" height="20" rx="4" fill="#e9f6f3"/>
+                        <g transform="rotate(-7 281 95)"><rect x="236" y="35" width="110" height="150" rx="10" fill="#f4fcfa"/><circle cx="270" cy="70" r="19" fill="#b7e5de"/><circle cx="270" cy="65" r="7" fill="#21877f"/><path d="M257 83q0-17 13-17t13 17" fill="#21877f"/><path d="M300 64h28M300 77h23M253 108h74M253 123h74M253 138h57" stroke="#b7e5de" strokeWidth="6" strokeLinecap="round"/></g>
+                    </svg>
+                </header>
                 <div className="applicant-tabs" role="tablist" aria-label="求职看板页面">
                     <button
                         aria-controls="applicant-jobs-panel"
@@ -338,7 +359,7 @@ const ApplicantDashboard = () => {
                         tabIndex={activeTab === "jobs" ? 0 : -1}
                         type="button"
                     >
-                        岗位机会
+                        <Icon name="briefcase"/>岗位机会 {!isInitialLoading ? `(${jobs.length})` : ""}
                     </button>
                     <button
                         aria-controls="applicant-resumes-panel"
@@ -352,7 +373,7 @@ const ApplicantDashboard = () => {
                         tabIndex={activeTab === "resumes" ? 0 : -1}
                         type="button"
                     >
-                        我的简历
+                        <Icon name="file"/>我的简历
                     </button>
                 </div>
 
@@ -362,19 +383,12 @@ const ApplicantDashboard = () => {
                     id="applicant-jobs-panel"
                     role="tabpanel"
                 >
-                    <div className="status-legend applicant-status-legend" aria-label="投递状态图例">
-                        {applicationStatusLegend.map((item) => (
-                            <span className="status-legend-item" key={item.label}>
-                                <span className={`status-legend-swatch ${item.className}`} aria-hidden="true"></span>
-                                <span>{item.label}</span>
-                            </span>
-                        ))}
-                    </div>
+                    <div className="jobs-section-heading"><h2>开放岗位</h2><button type="button" className="btn btn-outline-secondary" onClick={loadApplicantData} disabled={isInitialLoading || hasSubmittingJobs}><Icon name="refresh"/>刷新</button></div>
                     {statusMessage ? <div className="alert alert-success" role="status">{statusMessage}</div> : null}
                     {loadErrorMessage ? (
                         <div className="alert alert-danger state-message" role="alert">
                             <span>{loadErrorMessage}</span>
-                            <button className="btn btn-sm btn-outline-danger" onClick={loadApplicantData} type="button">重新加载</button>
+                            <button className="btn btn-sm btn-outline-danger" disabled={isInitialLoading || hasSubmittingJobs} onClick={loadApplicantData} type="button">重新加载</button>
                         </div>
                     ) : null}
                     {errorMessage ? <div className="alert alert-danger" role="alert">{errorMessage}</div> : null}
@@ -389,6 +403,7 @@ const ApplicantDashboard = () => {
                                     const application = getJobApplication(applicationsByJobId, job.id);
                                     const isSubmitting = !!submittingJobs[job.id];
                                     const actionAllowed = canApply(application) || canWithdraw(application);
+                                    const publishedOn = formatApplicationTimestamp(job.createdAt || job.postedDate);
                                     const appliedOn = formatApplicationTimestamp(application?.createdAt);
                                     const lastUpdated = shouldShowLastUpdated(application?.createdAt, application?.updatedAt)
                                         ? formatApplicationTimestamp(application?.updatedAt)
@@ -397,18 +412,14 @@ const ApplicantDashboard = () => {
 
                                     return (
                                         <article className={`job-card applicant-job-record ${cardStatusClass}`} key={job.id ?? index}>
-                                            <div className="applicant-job-identity">
+                                            <div className="applicant-job-identity"><span className="job-icon"><Icon name="briefcase"/></span><div className="job-copy">
                                                 <h2>{job.title}</h2>
                                                 <p className="job-company"><span className="metadata-label">公司：</span>{job.company}</p>
                                                 <p className="job-description"><span className="metadata-label">岗位描述：</span>{job.description}</p>
-                                            </div>
+                                            </div></div>
                                             <div className="applicant-job-status">
-                                                <span className={`status-tag ${cardStatusClass}`}>
-                                                    <span className="metadata-label">投递状态：</span>{formatStatus(applicationsByJobId[job.id]?.status, "未投递")}
-                                                </span>
-                                                <p className="status-helper">{getStatusHelperText(application?.status)}</p>
                                                 <dl className="job-timestamps">
-                                                    <div><dt>发布时间：</dt><dd>{formatApplicationTimestamp(job.createdAt || job.postedDate) || "—"}</dd></div>
+                                                    {publishedOn ? <div><dt>发布时间：</dt><dd>{publishedOn}</dd></div> : null}
                                                     {appliedOn ? (
                                                         <div><dt>投递时间：</dt><dd>{appliedOn}</dd></div>
                                                     ) : null}
@@ -417,14 +428,21 @@ const ApplicantDashboard = () => {
                                                     ) : null}
                                                 </dl>
                                             </div>
-                                            <div className="applicant-job-action">
-                                                <button
-                                                    className={canWithdraw(application) ? "btn btn-outline-secondary" : "btn btn-accent-primary"}
-                                                    disabled={!actionAllowed || isSubmitting}
-                                                    onClick={() => canWithdraw(application) ? withdraw(job.id) : apply(job.id)}
-                                                >
-                                                    {getActionLabel(application, isSubmitting)}
-                                                </button>
+                                            <div className={`applicant-job-action ${actionAllowed ? "" : "is-readonly"}`}>
+                                                <span className={`status-tag ${cardStatusClass}`}>
+                                                    <span className="metadata-label">投递状态：</span>{formatStatus(applicationsByJobId[job.id]?.status, "未投递")}
+                                                </span>
+                                                <p className="status-helper">{getStatusHelperText(application?.status)}</p>
+
+                                                {actionAllowed ? (
+                                                    <button
+                                                        className={canWithdraw(application) ? "btn btn-outline-secondary" : "btn btn-accent-primary"}
+                                                        disabled={isSubmitting}
+                                                        onClick={() => canWithdraw(application) ? withdraw(job.id) : apply(job.id)}
+                                                    >
+                                                        {getActionLabel(application, isSubmitting)}
+                                                    </button>
+                                                ) : null}
                                             </div>
                                         </article>
                                     );
@@ -432,17 +450,24 @@ const ApplicantDashboard = () => {
                             ))
                         }
                     </div>
+                    <div className="status-legend applicant-status-legend" aria-label="投递状态图例">
+                        {applicationStatusLegend.map((item) => (
+                            <span className="status-legend-item" key={item.label}>
+                                <span className={`status-legend-swatch ${item.className}`} aria-hidden="true"></span>
+                                <span>{item.label}</span>
+                            </span>
+                        ))}
+                    </div>
                 </section>
 
-                {activeTab === "resumes" ? (
-                    <div
-                        aria-labelledby="applicant-resumes-tab"
-                        id="applicant-resumes-panel"
-                        role="tabpanel"
-                    >
-                        <ResumePanel/>
-                    </div>
-                ) : null}
+                <div
+                    aria-labelledby="applicant-resumes-tab"
+                    hidden={activeTab !== "resumes"}
+                    id="applicant-resumes-panel"
+                    role="tabpanel"
+                >
+                    {activeTab === "resumes" ? <ResumePanel/> : null}
+                </div>
             </div>
         </>
     )

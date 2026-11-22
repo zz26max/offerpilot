@@ -18,8 +18,8 @@ export async function login(page, email, password, expectedPath) {
     await page.goto(expectedPath);
     await expect(page).toHaveURL(/\/$/);
 
-    await page.getByLabel('邮箱').fill(email);
-    await page.getByLabel('密码').fill(password);
+    await page.getByLabel('邮箱', { exact: true }).fill(email);
+    await page.getByLabel('密码', { exact: true }).fill(password);
     await page.getByRole('button', { name: '登录', exact: true }).click();
 
     await expect(page).toHaveURL(new RegExp(`${expectedPath.replace('/', '\\/')}$`));
