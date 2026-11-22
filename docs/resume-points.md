@@ -17,7 +17,7 @@
 | 维度 | 评分 | 说明 |
 |---|---|---|
 | 功能完整度 | 8 / 10 | 双角色主链路完整；缺分页、简历删除、个人资料、限流等 |
-| 工程质量 | 9 / 10 | 构建/测试/迁移/文档/可观测性齐全；无覆盖率门禁、E2E 未进 CI |
+| 工程质量 | 9 / 10 | 构建/测试/迁移/文档/可观测性齐全；CI 已加非写库 E2E，仍无覆盖率门禁 |
 | 交付完整度 | 8 / 10 | 已提交、推送并确认 public；仍无线上地址 |
 | 面试可讲深度 | 9 / 10 | Outbox、缓存一致性、文件安全、规则匹配都有可追问细节 |
 
@@ -35,7 +35,7 @@
 
 **部分实现/有前提**
 
-- Google 登录：代码完整，但 `GOOGLE_CLIENT_ID/SECRET` 仍是占位值；未完成真实第三方授权，页面上按钮仍在，演示时可能走到 Google 报错。
+- Google 登录：代码完整（OIDC → 应用 JWT），但默认隐藏按钮；需要真实 `GOOGLE_CLIENT_ID/SECRET` 与 `VITE_GOOGLE_OAUTH_ENABLED=true` 才显示，真实第三方授权仍未验证。
 - 岗位检索：求职者侧没有搜索/筛选/分页；管理端搜索/筛选/排序都在前端对全量数组计算，后端无分页参数。
 - 简历匹配：23 个技术词的规则覆盖率，不是 AI / 语义匹配；无年限、职级、同义词推理。
 - 文件存储：单实例本地磁盘；`ResumeStorage` 接口可替换 MinIO，但当前不共享、不冗余。
@@ -69,7 +69,7 @@
 - 已确认 `https://github.com/zz26max/offerpilot` 返回 200，README 与 `docs/ui-redesign/screenshots/login-1440x900.png` 均可公开访问。
 - 已添加 `.env.example`；`.workbuddy/`、`test-results/`、本地开发日记已加入 `.gitignore`。
 - CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，并新增前端 lint 步骤；推送后已触发一次 GitHub Actions（以 Actions 页面最新结果为准）。
-- **仍无线上 Demo**；Google OAuth 凭据未配置；版本号仍为 `0.2.0`（未 bump）；CI 仍未跑 E2E。
+- **仍无线上 Demo**；Google OAuth 凭据未配置（按钮默认隐藏）；版本号仍为 `0.2.0`（未 bump）；CI 已增加非写库 E2E job，完整 live 套件仍只在本地跑。
 
 **结论：仓库已可交付、可公开访问；线上 Demo 与 OAuth 凭据是剩余项。**
 
@@ -126,7 +126,7 @@
 | Repository 回源 | 1,000 → 0 | 计时阶段 |
 | 后端测试 | 179 用例（178 通过，1 跳过） | 31 个测试类；Windows 符号链接限制 |
 | 前端测试 | 106 用例 | 16 文件；Vitest + Testing Library + MSW |
-| E2E | 10 条用例 / 6 规格 | Playwright；本轮非写库 4 条通过 |
+| E2E | 10 条用例 / 6 规格 | Playwright；非写库 4 条已进 CI，其余本地运行 |
 | 业务端点/表/迁移 | 27 / 5 / 7 | 代码统计 |
 | 规模（committed） | 20 commits / 152 文件 / +10,093 −2,258 | `559928f..HEAD`；**不含未提交 UI 改版**，简历不必写 |
 
@@ -183,7 +183,7 @@
 - Flyway V1（Java baseline）+ V2–V5 SQL + V6/V7（Outbox/类型对齐），`ddl-auto=validate`；H2 测试与 MySQL 方言差异有专门迁移。
 - 测试金字塔：控制器契约、安全边界 401/403、缓存 fail-open 集成测试、Outbox 领取/退避、解析幂等、文件校验、匹配排序、前端交互/E2E。
 - Docker Compose 七服务；Swagger；Actuator/Prometheus；OTel→Jaeger；14 篇 ADR（上游）。
-- CI：后端测试 → 前端测试 → JAR → 双镜像；**注意**：镜像名仍是 `jrodolfo/*`，且不跑 E2E/lint。
+- CI：后端测试 → 前端测试 + lint → JAR → 双镜像；已增加非写库 Playwright E2E job（`ui-redesign.spec.js`）；完整 live 套件仍只在本地跑。
 
 ---
 
@@ -263,7 +263,7 @@
 - ❌ 不要写吞吐/QPS 提升；三轮方向不一致。
 - ❌ 不要写简历生成/编辑/模板/版本/导入导出/删除；没有。
 - ❌ 不要写「支持多租户/审计/消息通知/分页」；没有。
-- ⚠️ Google 登录未完成真实授权，面试可说「代码链路完成，需要配置 OAuth 凭据」，不要说「已支持 Google 登录」。
+- ⚠️ Google 登录默认隐藏；面试可说「OIDC 链路完成，配置凭据并显式开启后可用，真实第三方授权未验证」，不要说「已支持 Google 登录」。
 - ⚠️ UI 改版目前未提交；在提交/推送前，简历里不要写 GitHub 链接能直接看到它。
 
 ---
@@ -283,17 +283,17 @@
 ### P1（显著加分）
 
 7. 做一个线上 Demo（VPS/Render/Fly.io 均可），或至少 60 秒录屏/GIF；实习面试官通常不会本地跑项目。
-8. Google 按钮在未配置凭据时隐藏或明确提示，避免演示点出 Google 报错。
-9. 把 CI 镜像名改到自己的 Docker Hub 命名空间；加 `npm run lint` 与非写库 E2E（可选）。
-10. 增加 `.env.example`（JWT/DB/Redis/RabbitMQ/Google/OTel），不提交真实密钥。
-11. 更新 `PROJECT-BRIEF`/README 的测试数与 UI 描述，避免文档与代码不一致。
-12. 打 tag（`v1.0.0`），简历上的链接指向 tag 或 `main`。
+8. [x] Google 按钮默认隐藏，配置凭据并设置 `VITE_GOOGLE_OAUTH_ENABLED=true` 后才显示。
+9. [x] CI 镜像名改到仓库 owner；增加 `npm run lint` 与非写库 Playwright E2E job。
+10. [x] 增加 `.env.example`（JWT/DB/Redis/RabbitMQ/Google/OTel），不提交真实密钥。
+11. [ ] 更新 `PROJECT-BRIEF`/README 的测试数与 UI 描述（已加更新提示，正文仍是 2026-10 快照）。
+12. [ ] 打 tag（如 `v0.3.0`），简历链接指向 tag 或 `main`。
 
 ### P2（有时间再做）
 
 13. 岗位/投递/简历分页（游标），避免全量返回。
 14. `ResumeStorage` 的 MinIO/S3 实现；Outbox 积压指标；登录限流。
-15. 覆盖率报告/门禁；E2E 进 CI。
+15. 覆盖率报告/门禁；完整 live E2E（会写库）进 CI。
 16. 若要投 AI 岗：另做一个真实、可评测的 LLM 功能（如结构化抽取 + 人工标注集 + 准确率/成本对比），并明确与规则匹配并存，不要改个名字就称 AI。
 
 ---
