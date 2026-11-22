@@ -205,7 +205,7 @@ jobs:
 
     - name: Install Playwright Chromium
       working-directory: job-portal-frontend
-      run: npx playwright install --with-deps chromium
+      run: npx playwright install chromium
 
     - name: Run non-destructive browser suite
       working-directory: job-portal-frontend
