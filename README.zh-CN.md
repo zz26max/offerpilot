@@ -1,10 +1,34 @@
 # OfferPilot 求职管理平台
 
-OfferPilot 是面向求职者与招聘管理员的全栈求职管理平台。当前后端提供岗位浏览、投递跟踪、后台管理、简历文件管理与异步文本解析，以及 Redis 岗位查询缓存和基础可观测性，前端界面已完成中文化。
+OfferPilot 是面向求职者与招聘管理员的全栈求职管理平台。当前后端提供岗位浏览、投递跟踪、后台管理、简历文件管理与异步文本解析，以及 Redis 岗位查询缓存和基础可观测性；前端已完成双角色工作台与 320–1920 响应式改版（2026-11）。
 
 > 本项目基于 [jrodolfo/job-portal](https://github.com/jrodolfo/job-portal) 的 `main` 分支进行二次开发，上游引入版本与开发原则见 [UPSTREAM.md](./UPSTREAM.md)。上游代码遵循 [MIT License](./LICENSE)，原作者版权与许可证声明均予以保留。本项目只将实际新增、重构和验证过的内容作为二次开发成果。
+>
+> 需要在不读代码的情况下完整理解项目（定位、流程、架构、难点、原创/二次创作归属）？见 [项目技术档案](./docs/PROJECT-BRIEF.md)。
 
 [查看上游英文说明](./README.md)
+
+## 界面预览
+
+桌面端 1440×900：
+
+| 登录 | 岗位机会 |
+| --- | --- |
+| ![登录](docs/ui-redesign/screenshots/login-1440x900.png) | ![岗位机会](docs/ui-redesign/screenshots/applicant-jobs-1440x900.png) |
+| **我的简历** | **管理后台** |
+| ![我的简历](docs/ui-redesign/screenshots/applicant-resumes-1440x900.png) | ![管理后台](docs/ui-redesign/screenshots/admin-jobs-1440x900.png) |
+
+手机端：[求职者岗位机会 390×844](docs/ui-redesign/screenshots/applicant-jobs-390x844.png) · [登录 390×844](docs/ui-redesign/screenshots/login-390x844.png)。更多尺寸、后台页签与改版前后对照见 [截图索引](./docs/ui-redesign/SCREENSHOTS.md)。
+
+## 2026-11 前端改版
+
+- 认证页：40:60 双栏 + O 环品牌、共享 `AuthBrand` / `AuthInput` / `Icon`，图标输入与密码显隐。
+- 求职者工作台：欢迎区、图标页签、纵向岗位记录；只读投递状态不再渲染重复操作按钮。
+- 简历工作台：真实文件输入 + 自定义触发按钮 + 已选文件名；解析状态、按需加载文本与规则匹配。
+- 管理后台：统一记录/筛选/状态控件；页签支持方向键、Home/End 与 roving tabindex。
+- 320 / 390 / 600 / 768 / 900 / 1024 / 1440 / 1920 响应式验证；控件 ≥44px、可见键盘焦点、遵循 `prefers-reduced-motion`。
+
+详见 [UI 改版交付与验收](./docs/ui-redesign/README.md)。
 
 ## 当前功能
 
@@ -24,6 +48,7 @@ OfferPilot 是面向求职者与招聘管理员的全栈求职管理平台。当
 需要先安装并启动 Docker Desktop。在项目根目录打开 PowerShell，执行：
 
 ```powershell
+Copy-Item .env.example .env   # 可选：按需修改数据库/Redis/RabbitMQ/JWT 凭据
 docker compose up -d --build
 ```
 
@@ -155,8 +180,28 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark\Measure-
 
 正式记录结果时必须保持 `SPRING_JPA_SHOW_SQL=false`；示例中的 100 不是通用标准。输出百分比只适用于本次同机、本地、特定数据量和参数的受控实验，不代表生产容量或 SLA。强制终止进程仍可能绕过 `finally`，人工残留检查、参数、凭据处理、任务清理与恢复边界详见 [职位缓存对照基准说明](./docs/performance/README.zh-CN.md)。
 
-## v0.2.0 范围说明
+## 版本范围说明
 
-本版本在既有中文产品基线上加入 Redis 职位查询缓存、缓存故障 fail-open、缓存命中/失败指标、受保护的 Prometheus 端点和可复现的 cold/warm 基准脚本。没有修改 Java 包名或数据库结构。
+`v0.2.0` 在既有中文产品基线上加入 Redis 职位查询缓存、缓存故障 fail-open、缓存命中/失败指标、受保护的 Prometheus 端点和可复现的 cold/warm 基准脚本，没有修改 Java 包名或数据库结构。
+
+2026-11 在此基线上追加前端视觉、响应式与可访问性改版，不改变 API 契约、数据库结构或路由；前端改版记录见 [docs/ui-redesign](./docs/ui-redesign/README.md)。
 
 本版本不包含基于模型的 AI 匹配、简历删除、MinIO、限流、验证码或跨实例聚合缓存统计。后续计划包括：完善移动端与可访问性体验；增加限流和验证码；将 Tika 解析隔离为受资源配额约束的独立工作进程；扩展简历版本管理、可配置岗位匹配分析与投递数据统计；补充完整的生产容量验证和部署说明。
+
+## 已知限制与边界
+
+- **二次开发**：岗位 CRUD、基础 JWT、Docker Compose 骨架、CI 与 ADR 来自 MIT 上游；简历异步解析、规则匹配、缓存/可观测性、认证收敛与前端改版为本地新增或重构。详见 [UPSTREAM.md](./UPSTREAM.md) 与 [项目技术档案](./docs/PROJECT-BRIEF.md)。
+- **不是 AI**：岗位匹配是 23 个技术关键词的规则覆盖率，不评价候选人、不输出录用概率。
+- **单实例文件存储**：当前使用本地磁盘，多副本不共享文件；`ResumeStorage` 接口可替换为 MinIO/S3。
+- **无分页/限流**：岗位、投递、用户列表均为全量返回；登录与上传未做限流或验证码。
+- **Google 登录需配置**：需要真实 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`；未配置时邮箱密码登录不受影响。
+- **本地可运行版本**：仓库提供 Docker Compose 一键启动，未提供线上 Demo 或生产 SLA。
+
+## 相关文档
+
+- [项目技术档案（定位、架构、流程、归属）](./docs/PROJECT-BRIEF.md)
+- [简历技术点与面试素材](./docs/resume-points.md)
+- [UI 改版交付与验收](./docs/ui-redesign/README.md)
+- [职位缓存对照基准说明](./docs/performance/README.zh-CN.md)
+- [架构决策记录](./docs/adr/)
+- [上游来源与二次开发原则](./UPSTREAM.md)

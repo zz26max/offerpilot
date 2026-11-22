@@ -1,6 +1,8 @@
 # Job Portal
 
-> **OfferPilot v0.1.0 中文二次开发版**：中文项目说明、启动方式与功能边界请查看 [README.zh-CN.md](./README.zh-CN.md)。本仓库保留以下上游英文原文、[MIT License](./LICENSE) 与原作者版权信息；二次开发来源见 [UPSTREAM.md](./UPSTREAM.md)。
+> **OfferPilot v0.2.0 中文二次开发版（2026-11 前端改版）**：中文项目说明、界面预览、启动方式与功能边界请查看 [README.zh-CN.md](./README.zh-CN.md)。本仓库保留以下上游英文原文、[MIT License](./LICENSE) 与原作者版权信息；二次开发来源见 [UPSTREAM.md](./UPSTREAM.md)。
+>
+> 以下徽章与英文正文来自上游 `jrodolfo/job-portal`；本项目的最新状态、截图与限制以中文 README 为准。
 
 [![CI Workflow](https://github.com/jrodolfo/job-portal/actions/workflows/backend-docker-build.yml/badge.svg)](https://github.com/jrodolfo/job-portal/actions/workflows/backend-docker-build.yml)
 [![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://github.com/jrodolfo/job-portal/blob/main/job-portal-backend/pom.xml)
