@@ -12,6 +12,8 @@ RUN npm ci
 COPY . .
 
 # Build the React application
+ARG VITE_GOOGLE_OAUTH_ENABLED=false
+ENV VITE_GOOGLE_OAUTH_ENABLED=${VITE_GOOGLE_OAUTH_ENABLED}
 RUN npm run build
 
 # Use a lightweight server for serving the build files

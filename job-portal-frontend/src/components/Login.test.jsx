@@ -21,6 +21,10 @@ describe('Login', () => {
         localStorage.clear();
     });
 
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
     it('should login applicant, save token, set user details and navigate', async () => {
         axios.post.mockResolvedValueOnce({data: {token: 'jwt-123'}});
         axios.get.mockResolvedValueOnce({
@@ -161,6 +165,7 @@ describe('Login', () => {
     });
 
     it('should show a warning when Google login returns an error', () => {
+        vi.stubEnv('VITE_GOOGLE_OAUTH_ENABLED', 'true');
         renderWithProviders(<Login/>, {route: '/?oauth_error=true'});
 
         expect(screen.getByRole('status')).toHaveTextContent('Google 登录未完成，请重试或使用邮箱和密码登录。');
@@ -187,7 +192,15 @@ describe('Login', () => {
         await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/applicant-dashboard'));
     });
 
+    it('hides the Google button when OAuth is not configured', () => {
+        renderWithProviders(<Login/>);
+
+        expect(screen.queryByRole('button', {name: '使用 Google 登录'})).not.toBeInTheDocument();
+        expect(screen.getByRole('button', {name: '登录'})).toBeInTheDocument();
+    });
+
     it('should redirect to Google OAuth endpoint when Google button is clicked', async () => {
+        vi.stubEnv('VITE_GOOGLE_OAUTH_ENABLED', 'true');
         renderWithProviders(<Login/>);
         const user = userEvent.setup();
 

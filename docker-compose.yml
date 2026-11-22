@@ -53,7 +53,7 @@ services:
       platforms:
         - "linux/amd64"
         - "linux/arm64"
-    image: jrodolfo/job-portal-backend:latest
+    image: offerpilot-backend:latest
     container_name: job-portal-backend
     restart: always
     depends_on:
@@ -127,7 +127,9 @@ services:
       platforms:
         - "linux/amd64"
         - "linux/arm64"
-    image: jrodolfo/job-portal-frontend:latest
+      args:
+        VITE_GOOGLE_OAUTH_ENABLED: ${VITE_GOOGLE_OAUTH_ENABLED:-false}
+    image: offerpilot-frontend:latest
     container_name: job-portal-frontend
     restart: always
     depends_on:

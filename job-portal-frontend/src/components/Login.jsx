@@ -32,6 +32,7 @@ const Login = () => {
     const location = useLocation();
     const registrationMessage = location.state?.registrationMessage || "";
     const sessionMessage = location.state?.sessionMessage || "";
+    const googleOAuthEnabled = import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === "true";
     const oauthError = new URLSearchParams(location.search).get("oauth_error") === "true";
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -120,7 +121,7 @@ const Login = () => {
                                         {sessionMessage}
                                     </div>
                                 ) : null}
-                                {oauthError && !errorMessage ? (
+                                {oauthError && googleOAuthEnabled && !errorMessage ? (
                                     <div className="alert alert-warning" role="status">
                                         Google 登录未完成，请重试或使用邮箱和密码登录。
                                     </div>
@@ -167,14 +168,18 @@ const Login = () => {
                                         </button>
                                     </div>
                                 </form>
-                                <div className="auth-divider"><span>或</span></div>
-                                <div className="d-grid">
-                                    <button
-                                        onClick={() => window.location.href = `${BACKEND_API_URL}/oauth2/authorization/google`}
-                                        className="btn btn-outline-secondary auth-google-button">
-                                        使用 Google 登录
-                                    </button>
-                                </div>
+                                {googleOAuthEnabled ? (
+                                    <>
+                                        <div className="auth-divider"><span>或</span></div>
+                                        <div className="d-grid">
+                                            <button
+                                                onClick={() => window.location.href = `${BACKEND_API_URL}/oauth2/authorization/google`}
+                                                className="btn btn-outline-secondary auth-google-button">
+                                                使用 Google 登录
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : null}
                         </div>
                         <div className="login-footer">
                             <span>还没有账号？</span><Link to="/register">立即注册</Link>

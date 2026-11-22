@@ -39,7 +39,7 @@ OfferPilot 是面向求职者与招聘管理员的全栈求职管理平台。当
 
 求职者可以注册并登录账号，浏览招聘中的岗位，提交、撤回或再次提交申请，并在个人看板查看投递状态和更新时间。求职者还可在“我的简历”工作台上传 PDF/DOCX 简历、查看异步解析状态与提取文本、下载原文件，并将解析成功的简历与开放岗位进行规则技能覆盖率比较。管理员可以发布、编辑、关闭、重新开放或删除岗位，按状态审核投递记录，并启用或停用求职者账号。
 
-当前认证方式包括邮箱密码登录、JWT 会话校验与可选的 Google OAuth2 登录。公开岗位列表、管理员岗位列表和岗位详情使用 Redis 缓存；缓存故障时业务读写按 fail-open 策略继续访问数据库。项目还提供 OpenAPI/Swagger 接口文档、Actuator/Prometheus 指标，以及基于 OpenTelemetry 和 Jaeger 的本地链路追踪。
+当前认证方式包括邮箱密码登录、JWT 会话校验与可选的 Google OAuth2 登录（默认隐藏，需配置凭据并显式开启）。公开岗位列表、管理员岗位列表和岗位详情使用 Redis 缓存；缓存故障时业务读写按 fail-open 策略继续访问数据库。项目还提供 OpenAPI/Swagger 接口文档、Actuator/Prometheus 指标，以及基于 OpenTelemetry 和 Jaeger 的本地链路追踪。
 
 ## 技术栈
 
@@ -82,7 +82,14 @@ docker compose down
 | 求职者 | `user@local.test` | `user123` |
 | 管理员 | `admin@local.test` | `admin123` |
 
-也可以直接在登录页注册新的求职者账号。Google 登录需要额外配置 OAuth2 凭据，邮箱密码登录不受影响。
+也可以直接在登录页注册新的求职者账号。Google 登录默认隐藏：代码链路已实现（OIDC → 应用自签 JWT），但需要真实凭据并显式开启后才会显示按钮，避免未配置时点到 Google 错误页。
+
+### 启用 Google 登录（可选）
+
+1. 在 Google Cloud Console 创建 OAuth Client（Web application），Authorized redirect URI 填 `http://localhost:8080/login/oauth2/code/google`。
+2. 后端配置 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`。
+3. 前端构建时设置 `VITE_GOOGLE_OAUTH_ENABLED=true`；本地开发可在 `job-portal-frontend/.env.local` 写入，Docker Compose 可写入 `.env` 后重建前端镜像。
+4. 用一个全新邮箱验证；已存在的本地账号/管理员账号不会被自动绑定（这是有意的安全策略）。
 
 ## 本地测试
 
@@ -199,7 +206,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark\Measure-
 - **不是 AI**：岗位匹配是 23 个技术关键词的规则覆盖率，不评价候选人、不输出录用概率。
 - **单实例文件存储**：当前使用本地磁盘，多副本不共享文件；`ResumeStorage` 接口可替换为 MinIO/S3。
 - **无分页/限流**：岗位、投递、用户列表均为全量返回；登录与上传未做限流或验证码。
-- **Google 登录需配置**：需要真实 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`；未配置时邮箱密码登录不受影响。
+- **Google 登录默认隐藏**：代码链路已实现，但需要真实 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` 与前端 `VITE_GOOGLE_OAUTH_ENABLED=true`；未配置时不会显示按钮，邮箱密码登录不受影响。
 - **本地可运行版本**：仓库提供 Docker Compose 一键启动，未提供线上 Demo 或生产 SLA。
 
 ## 相关文档
