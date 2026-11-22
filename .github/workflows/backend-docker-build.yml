@@ -134,6 +134,7 @@ jobs:
       JWT_SECRET_KEY: ci-e2e-secret-key-at-least-32-bytes-long
       ALLOWED_ORIGINS: http://localhost:5173
       FRONTEND_BASE_URL: http://localhost:5173
+      PLAYWRIGHT_CHANNEL: chrome
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -203,9 +204,8 @@ jobs:
         cat preview.log
         exit 1
 
-    - name: Install Playwright Chromium
-      working-directory: job-portal-frontend
-      run: npx playwright install chromium
+    - name: Check system Chrome
+      run: google-chrome --version
 
     - name: Run non-destructive browser suite
       working-directory: job-portal-frontend
