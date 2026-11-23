@@ -1,6 +1,6 @@
 # OfferPilot 求职管理平台 · 项目完整性与简历素材
 
-> 更新：2026-11-22。事实基线：当前工作区代码与最近一次本地验证（2026-11-18）。
+> 更新：2026-11-23。事实基线：当前 `main`（以仓库最新提交为准）与最近一次本地验证（2026-11-18，CI 于 2026-11-22 通过）。
 > 上游：`jrodolfo/job-portal`（MIT，快照 `559928f`）；本项目在其上二次开发，岗位 CRUD、基础 JWT、Compose 骨架、CI、ADR 属上游既有能力，不能写成个人从零实现。
 > 本文只写能追溯到代码/测试/运行记录的内容；红线见第六节。
 
@@ -64,9 +64,9 @@
 | 真实运行验证 | 2026-11-18 用真实 MySQL/Redis/RabbitMQ 跑通注册登录、岗位 CRUD、投递/撤回/再投、PDF/DOCX 解析、匹配、下载、后台审核、停用会话失效 |
 | 规模事实 | 27 个 REST 业务端点；5 张业务表；7 个 Flyway 迁移；7 个 Compose 服务；14 篇 ADR（上游） |
 
-### 1.4 交付/仓库现状（2026-11-22 更新）
+### 1.4 交付/仓库现状（2026-11-23 更新）
 
-- 已提交并推送：`114e0e3`（UI 改版）、`adfe5e2`（文档/截图）、`68d137a`（`.env.example`、`.gitignore`、CI）、`933b7d6`（交付状态）；`origin/main` 已与本地一致。
+- 已提交并推送，`main = origin/main`（截至 2026-11-23）；包含 UI 改版 `114e0e3`、文档/截图 `adfe5e2`、仓库/CI 配置 `68d137a`、Google 按钮开关 `aa53991`、CI E2E `143373e`、Chrome 渠道 `ec9a6f6` 与后续文档提交。
 - 已确认 `https://github.com/zz26max/offerpilot` 返回 200，README 与 `docs/ui-redesign/screenshots/login-1440x900.png` 均可公开访问。
 - 已添加 `.env.example`；`.workbuddy/`、`test-results/`、本地开发日记已加入 `.gitignore`。
 - CI 镜像名已改为 `${{ github.repository_owner }}/offerpilot-*`，新增前端 lint 与非写库 Playwright E2E job；run `45047029290` 已通过。
@@ -129,7 +129,7 @@
 | 前端测试 | 107 用例 | 16 文件；Vitest + Testing Library + MSW |
 | E2E | 10 条用例 / 6 规格 | Playwright；非写库 4 条已进 CI，其余本地运行 |
 | 业务端点/表/迁移 | 27 / 5 / 7 | 代码统计 |
-| 规模（committed） | 20 commits / 152 文件 / +10,093 −2,258 | `559928f..HEAD`；**不含未提交 UI 改版**，简历不必写 |
+| 规模（committed） | 34 commits / 206 文件 / +12,360 −2,288 | `559928f..HEAD`；包含文档、测试、CI 与截图，不要当纯代码量写 |
 
 ---
 
@@ -265,7 +265,7 @@
 - ❌ 不要写简历生成/编辑/模板/版本/导入导出/删除；没有。
 - ❌ 不要写「支持多租户/审计/消息通知/分页」；没有。
 - ⚠️ Google 登录默认隐藏；面试可说「OIDC 链路完成，配置凭据并显式开启后可用，真实第三方授权未验证」，不要说「已支持 Google 登录」。
-- ⚠️ UI 改版目前未提交；在提交/推送前，简历里不要写 GitHub 链接能直接看到它。
+- ⚠️ UI 改版已提交并推送；简历里的 GitHub 链接直接指向 `main` 即可。面试前仍建议自己打开一次仓库，确认网络可访问。
 
 ---
 
@@ -274,7 +274,7 @@
 ### P0（已完成）
 
 - [x] 提交 UI 改版、文档、截图、测试与设计文档（`114e0e3`、`adfe5e2`）。
-- [x] `main` 快进并推送 `origin/main`（`933b7d6`），本地与远端一致。
+- [x] `main` 快进并推送 `origin/main`（见仓库最新提交），本地与远端一致。
 - [x] `.workbuddy/`、本地开发日记、`test-results/` 等已加入 `.gitignore`。
 - [x] README 已加入截图、2026-11 改版说明、演示账号、启动步骤、已知限制与二次开发声明。
 - [x] `PROJECT-BRIEF`、`resume-points`、UI 截图已纳入提交。
